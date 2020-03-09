@@ -4,4 +4,6 @@ http://www.protezionecivile.it/attivita-rischi/rischio-sanitario/emergenze/coron
 
 https://github.com/pcm-dpc/COVID-19
 
+Full report available at <COVID-19-IT.html>
+
 ![](COVID-19-IT.png) 

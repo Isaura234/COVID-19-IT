@@ -202,6 +202,6 @@ ggplot(data, aes(x = date, y = infected)) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
-ggsave("COVID-19-IT.png", width = 6, height = 5)
+ggsave("COVID-19-IT.png", width = 7, height = 6, dpi = 300)
 ```
 
