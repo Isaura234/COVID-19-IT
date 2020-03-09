@@ -1,5 +1,5 @@
 ---
-title: "Modelling coronavirus COVID-19 in Italy"
+title: "Statistical Modelling of COVID-19 Outbreak in Italy"
 date: "`r format(Sys.time(), '%d %b %Y')`"
 output: 
   rmarkdown::html_vignette:

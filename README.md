@@ -1,9 +1,11 @@
-# Modelling coronavirus COVID-19 in Italy
+# Statistical Modelling of COVID-19 Outbreak in Italy
 
-http://www.protezionecivile.it/attivita-rischi/rischio-sanitario/emergenze/coronavirus
+This repository contains the results of estimating simple statistical models to the data provided by the [Protezione Civile](http://www.protezionecivile.it/attivita-rischi/rischio-sanitario/emergenze/coronavirus) concerning the evolution of the total number of infected in Italy.   
 
-https://github.com/pcm-dpc/COVID-19
+Data source: https://github.com/pcm-dpc/COVID-19  
 
-Full report available at <COVID-19-IT.html>
+Full report available at [COVID-19-IT.html](./COVID-19-IT.html)
+
+\br
 
 ![](COVID-19-IT.png) 
