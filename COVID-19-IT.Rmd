@@ -20,6 +20,8 @@ opts_chunk$set(fig.align = "center",
                par = TRUE, # needed for setting hook 
                collapse = TRUE, # collapse input & ouput code in chunks
                warning = FALSE, message = FALSE)
+
+library(ggplot2)
 ```
 
 ## Data 
@@ -28,11 +30,6 @@ Dipartimento della Protezione Civile: COVID-19 Italia - Monitoraggio della situa
 
 Source: https://github.com/pcm-dpc/COVID-19 
 
-
-```{R}
-library(ggplot2)
-# library(dplyr)
-```
 
 ```{R}
 url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv"
@@ -47,7 +44,7 @@ data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data)
 ```
 
-## Models fitting
+## Nonlinear grow models
 
 ### Exponential growth model
 
@@ -126,13 +123,15 @@ ggplot(data, aes(x = date, y = infected)) +
 
 ### Point estimates
 
-```{R, out.width="100%"}
+```{R}
 df = data.frame(x = seq(min(data$x), max(data$x)+14))
 df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1),
                fit1 = predict(mod1, newdata = df),
                fit2 = predict(mod2, newdata = df),
                fit3 = predict(mod3, newdata = df))
+```
 
+```{R, echo=-2, out.width="100%"}
 ggplot(data, aes(x = date, y = infected)) + 
   geom_point() +
   geom_line(data = df, aes(x = date, y = fit1, color = "Exponential")) +
@@ -149,6 +148,7 @@ ggplot(data, aes(x = date, y = infected)) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
+ggsave("COVID-19-IT.png", width = 7, height = 6, dpi = 300)
 ```
 
 ### Prediction intervals
@@ -159,6 +159,7 @@ pred1 = cbind(df, predFit(mod1, newdata = df, interval = c("prediction"), level 
 pred2 = cbind(df, predFit(mod2, newdata = df, interval = c("prediction"), level = 0.95))
 # pred3 = cbind(df, predFit(mod3, newdata = df, interval = c("prediction"), level = 0.95))
 # :-(( error 
+pred3 = cbind(df, lwr = df$fit3, upr = df$fit3)
 ```
 
 ```{R, echo=FALSE, eval=FALSE}
@@ -167,6 +168,8 @@ pred1 = predictNLS(mod1, newdata = df["x"], interval = "prediction", level = 0.9
 pred1 = cbind(df, "lwr" = pred1$summary[,11], "upr" = pred1$summary[,12])
 pred2 = predictNLS(mod2, newdata = df["x"], interval = c("prediction"), level = 0.95, nsim = 1e5)
 pred2 = cbind(df, "lwr" = pred2$summary[,11], "upr" = pred2$summary[,12])
+pred3 = predictNLS(mod3, newdata = df["x"], interval = c("prediction"), level = 0.95, nsim = 1e5)
+pred3 = cbind(df, "lwr" = pred3$summary[,11], "upr" = pred3$summary[,12])
 ```
 
 ```{R, echo=FALSE, eval=FALSE}
@@ -175,6 +178,8 @@ pred1 = predictNLS(mod1, newdata = df, interval = "prediction", level = 0.95, ns
 pred1 = cbind(df, pred1[c("lwr", "upr")])
 pred2 = predictNLS(mod2, newdata = df, interval = c("prediction"), level = 0.95, nsim = 1e5)
 pred2 = cbind(df, pred2[c("lwr", "upr")])
+pred3 = predictNLS(mod3, newdata = df, interval = c("prediction"), level = 0.95, nsim = 1e5)
+pred3 = cbind(df, pred3[c("lwr", "upr")])
 ```
 
 ```{R, echo=-2, out.width="100%"}
@@ -182,22 +187,26 @@ ggplot(data, aes(x = date, y = infected)) +
   geom_point() +
   geom_line(data = df, aes(x = date, y = fit1, color = "Exponential")) +
   geom_line(data = df, aes(x = date, y = fit2, color = "Logistic")) +
+  geom_line(data = df, aes(x = date, y = fit3, color = "Gompertz")) +
   geom_ribbon(data = pred1, aes(x = date, ymin = lwr, ymax = upr), 
               inherit.aes = FALSE,
               fill = "red3", alpha=0.3) +
   geom_ribbon(data = pred2, aes(x = date, ymin = lwr, ymax = upr), 
               inherit.aes = FALSE,
               fill = "dodgerblue3", alpha=0.3) +
+  geom_ribbon(data = pred3, aes(x = date, ymin = lwr, ymax = upr), 
+              inherit.aes = FALSE,
+              fill = "green4", alpha=0.3) +
   coord_cartesian(ylim = c(0, max(pred2$upr))) +
   labs(x = "", y = "Infected", color = "Model") +
   scale_y_continuous(minor_breaks = seq(0, max(pred2$upr), by = 1000)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   scale_color_manual(values = c("Exponential" = "red3", 
-                                "Logistic" = "dodgerblue3")) +
+                                "Logistic" = "dodgerblue3",
+                                "Gompertz" = "green4")) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
-ggsave("COVID-19-IT.png", width = 7, height = 6, dpi = 300)
 ```
 
