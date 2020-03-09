@@ -1,0 +1,207 @@
+---
+title: "Modelling coronavirus COVID-19 in Italy"
+date: "`r format(Sys.time(), '%d %b %Y')`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: false
+    css: "COVID-19-IT.css"
+---
+
+<br><br>
+
+```{r setup, include=FALSE}
+library(knitr)
+opts_chunk$set(fig.align = "center",
+               fig.width = 6, fig.height = 5.5,
+               dev.args = list(pointsize=10),
+               out.width = "90%", dpi = 300,
+               cache = FALSE,
+               par = TRUE, # needed for setting hook 
+               collapse = TRUE, # collapse input & ouput code in chunks
+               warning = FALSE, message = FALSE)
+```
+
+## Data 
+
+Source: Dipartimento della Protezione Civile <https://github.com/pcm-dpc/COVID-19>
+
+COVID-19 Italia - Monitoraggio della situazione: <http://arcg.is/C1unv>
+
+
+https://www.huffingtonpost.it/entry/coronavirus-secondo-il-modello-matematico-possibile-a-breve-un-calo-dei-contagi_it_5e636b7ec5b6670e72f8999a?utm_hp_ref=it-homepage
+
+
+```{R}
+library(ggplot2)
+library(dplyr)
+```
+
+```{R}
+url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv"
+COVID19IT <- read.csv(file = url, stringsAsFactors = FALSE)
+# View(COVID19IT)
+
+# create data for analysis
+data = data.frame(date = as.Date(COVID19IT$data),
+                  infected = COVID19IT$totale_casi)
+data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
+
+DT::datatable(data)
+```
+
+## Models fitting
+
+### Exponential growth model
+
+$$
+\mu(x) = \theta_1 \exp\{\theta_2 x\}
+$$
+where $\theta_1$ is the value at the origin (i.e. $\mu(x=0)$), and $\theta_2$  represents the (constant) relative ratio of change (i.e. $\frac{d\mu(x)}{dx }\frac{1}{\mu(x)} = \theta_2$). Thus, the model describes an increasing (exponential growth if $\theta_2 > 0$) or decreasing (exponential decay if $\theta_2 < 0$) trend with constant relative rate.
+
+```{R}
+mod1_start = lm(log(infected) ~ x, data = data)
+start = list(th1 = log(coef(mod1_start)[1]), 
+             th2 = coef(mod1_start)[2])
+mod1 = nls(infected ~ th1 * exp(th2 * x), data = data, start = start)
+summary(mod1)
+```
+
+### Logistic growth model
+
+$$
+\mu(x) = \frac{\theta_1}{1+\exp\{(\theta_2 - x)/\theta_3\}}
+$$
+where $\theta_1$ is the horizontal asymptote, $\theta_2$ represents the x-value at the inflection point of the curve, and $\theta_3$ represents a scale parameter.
+
+```{R}
+mod2 = nls(infected ~ SSlogis(x, Asym, xmid, scal), data = data)
+summary(mod2)
+```
+
+### Gompertz growth model
+
+$$
+\mu(x) = \theta_1 \exp\{-\theta_2 \theta_3^x\}
+$$
+where $\theta_1$ is the horizontal asymptote, $\theta_2$ represents the value of the function at $x = 0$ (displacement along the x-axis), and $\theta_3$ represents a scale parameter.
+
+The difference between the logistic and Gompertz functions is that the latter is not symmetric around the inflection point. 
+
+```{R}
+mod3 = nls(infected ~ SSgompertz(x, Asym, b2, b3), data = data)
+summary(mod3)
+```
+
+### Models comparison
+
+```{R}
+models = list("Exponential model" = mod1, 
+              "Logistic model" = mod2, 
+              "Gompertz model" = mod3)
+tab = data.frame(loglik = sapply(models, logLik),
+                 df = sapply(models, function(m) attr(logLik(m), "df")),
+                 Rsquare = sapply(models, function(m) 
+                                  cor(data$infected, fitted(m))^2),
+                 AIC = sapply(models, AIC),
+                 BIC = sapply(models, BIC))
+knitr::kable(tab)
+```
+
+```{R, out.width="100%"}
+ggplot(data, aes(x = date, y = infected)) + 
+  geom_point() +
+  geom_line(aes(y = fitted(mod1), color = "Exponential")) +
+  geom_line(aes(y = fitted(mod2), color = "Logistic")) +
+  geom_line(aes(y = fitted(mod3), color = "Gompertz")) +
+  labs(x = "", y = "Infected", color = "Model") +
+  scale_color_manual(values = c("Exponential" = "red3", 
+                                "Logistic" = "dodgerblue3",
+                                "Gompertz" = "green4")) +
+  scale_y_continuous(minor_breaks = seq(0, coef(mod2)[1], by = 1000)) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+## Predictions
+
+### Point estimates
+
+```{R, out.width="100%"}
+df = data.frame(x = seq(min(data$x), max(data$x)+14))
+df = mutate(df, 
+            date = as.Date(x, origin = data$date[1]-1),
+            fit1 = predict(mod1, newdata = df),
+            fit2 = predict(mod2, newdata = df),
+            fit3 = predict(mod3, newdata = df))
+
+ggplot(data, aes(x = date, y = infected)) + 
+  geom_point() +
+  geom_line(data = df, aes(x = date, y = fit1, color = "Exponential")) +
+  geom_line(data = df, aes(x = date, y = fit2, color = "Logistic")) +
+  geom_line(data = df, aes(x = date, y = fit3, color = "Gompertz")) +
+  coord_cartesian(ylim = c(0, coef(mod2)[1])) +
+  labs(x = "", y = "Infected", color = "Model") +
+  scale_y_continuous(minor_breaks = seq(0, coef(mod2)[1], by = 1000)) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  scale_color_manual(values = c("Exponential" = "red3", 
+                                "Logistic" = "dodgerblue3",
+                                "Gompertz" = "green4")) +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+```
+
+### Prediction intervals
+
+```{R}
+library(investr)
+pred1 = cbind(df, predFit(mod1, newdata = df, interval = c("prediction"), level = 0.95))
+pred2 = cbind(df, predFit(mod2, newdata = df, interval = c("prediction"), level = 0.95))
+# pred3 = cbind(df, predFit(mod3, newdata = df, interval = c("prediction"), level = 0.95))
+# :-(( error 
+```
+
+```{R, echo=FALSE, eval=FALSE}
+library(propagate)
+pred1 = predictNLS(mod1, newdata = df["x"], interval = "prediction", level = 0.95, nsim = 1e5)
+pred1 = cbind(df, "lwr" = pred1$summary[,11], "upr" = pred1$summary[,12])
+pred2 = predictNLS(mod2, newdata = df["x"], interval = c("prediction"), level = 0.95, nsim = 1e5)
+pred2 = cbind(df, "lwr" = pred2$summary[,11], "upr" = pred2$summary[,12])
+```
+
+```{R, echo=FALSE, eval=FALSE}
+source("misc/predictNLS.R")
+pred1 = predictNLS(mod1, newdata = df, interval = "prediction", level = 0.95, nsim = 1e5)
+pred1 = cbind(df, pred1[c("lwr", "upr")])
+pred2 = predictNLS(mod2, newdata = df, interval = c("prediction"), level = 0.95, nsim = 1e5)
+pred2 = cbind(df, pred2[c("lwr", "upr")])
+```
+
+```{R, echo=-2, out.width="100%"}
+ggplot(data, aes(x = date, y = infected)) + 
+  geom_point() +
+  geom_line(data = df, aes(x = date, y = fit1, color = "Exponential")) +
+  geom_line(data = df, aes(x = date, y = fit2, color = "Logistic")) +
+  geom_ribbon(data = pred1, aes(x = date, ymin = lwr, ymax = upr), 
+              inherit.aes = FALSE,
+              fill = "red3", alpha=0.3) +
+  geom_ribbon(data = pred2, aes(x = date, ymin = lwr, ymax = upr), 
+              inherit.aes = FALSE,
+              fill = "dodgerblue3", alpha=0.3) +
+  coord_cartesian(ylim = c(0, max(pred2$upr))) +
+  labs(x = "", y = "Infected", color = "Model") +
+  scale_y_continuous(minor_breaks = seq(0, max(pred2$upr), by = 1000)) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  scale_color_manual(values = c("Exponential" = "red3", 
+                                "Logistic" = "dodgerblue3")) +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+ggsave("COVID-19-IT.png", width = 6, height = 5)
+```
+
