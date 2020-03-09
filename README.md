@@ -4,8 +4,7 @@ This repository contains the results of estimating simple statistical models to 
 
 Data source: https://github.com/pcm-dpc/COVID-19  
 
-Full report available at [COVID-19-IT.html](./COVID-19-IT.html)
-
-\br
+Full report available at [COVID-19-IT.html](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-IT.html)  
+  
 
 ![](COVID-19-IT.png) 

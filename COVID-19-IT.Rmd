@@ -24,17 +24,14 @@ opts_chunk$set(fig.align = "center",
 
 ## Data 
 
-Source: Dipartimento della Protezione Civile <https://github.com/pcm-dpc/COVID-19>
+Dipartimento della Protezione Civile: COVID-19 Italia - Monitoraggio della situazione <http://arcg.is/C1unv>
 
-COVID-19 Italia - Monitoraggio della situazione: <http://arcg.is/C1unv>
-
-
-https://www.huffingtonpost.it/entry/coronavirus-secondo-il-modello-matematico-possibile-a-breve-un-calo-dei-contagi_it_5e636b7ec5b6670e72f8999a?utm_hp_ref=it-homepage
+Source: https://github.com/pcm-dpc/COVID-19 
 
 
 ```{R}
 library(ggplot2)
-library(dplyr)
+# library(dplyr)
 ```
 
 ```{R}
@@ -131,11 +128,10 @@ ggplot(data, aes(x = date, y = infected)) +
 
 ```{R, out.width="100%"}
 df = data.frame(x = seq(min(data$x), max(data$x)+14))
-df = mutate(df, 
-            date = as.Date(x, origin = data$date[1]-1),
-            fit1 = predict(mod1, newdata = df),
-            fit2 = predict(mod2, newdata = df),
-            fit3 = predict(mod3, newdata = df))
+df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1),
+               fit1 = predict(mod1, newdata = df),
+               fit2 = predict(mod2, newdata = df),
+               fit3 = predict(mod3, newdata = df))
 
 ggplot(data, aes(x = date, y = infected)) + 
   geom_point() +
