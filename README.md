@@ -7,4 +7,4 @@ Data source: https://github.com/pcm-dpc/COVID-19
 Full report available at [COVID-19-IT.html](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-IT.html)  
   
 
-![](COVID-19-IT.png =100x20) 
+<img src="COVID-19-IT.png" alt="COVID-19-IT.png" width="80%"/>
