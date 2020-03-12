@@ -126,7 +126,18 @@ knitr::kable(tab)
 ```
 
 ```{r, echo=FALSE}
-kableExtra::save_kable(knitr::kable(tab), file = "tab.png")
+library(gridExtra)
+ttheme <- ttheme_default(
+  core = list(# bg_params = list(fill = NA, col=NA),
+              fg_params=list(fontface=1, fontsize = 10)),
+  colhead = list(fg_params=list(col="black", fontface=2, fontsize = 10)),
+  rowhead = list(fg_params=list(col="black", fontface=2, hjust=0, x=0,
+                                fontsize = 10),
+                 bg_params=list(fill = c("grey95", "grey90"))))
+tab <- tableGrob(signif(tab,4),  theme = ttheme)
+ggsave(grid.arrange(tab), 
+       file = "COVID-19-IT_table.png", 
+       width = 10, height = 4, dpi = 300)
 ```
 
 
@@ -181,7 +192,7 @@ ggplot(data, aes(x = date, y = y)) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
-ggsave("COVID-19-IT.png", width = 7, height = 6, dpi = 300)
+ggsave(file = "COVID-19-IT_graph.png", width = 7, height = 6, dpi = 300)
 ```
 
 ### Prediction intervals
