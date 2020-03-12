@@ -134,10 +134,10 @@ ttheme <- ttheme_default(
   rowhead = list(fg_params=list(col="black", fontface=2, hjust=0, x=0,
                                 fontsize = 10),
                  bg_params=list(fill = c("grey95", "grey90"))))
-tab <- tableGrob(signif(tab,4),  theme = ttheme)
+tab <- tableGrob(signif(tab,7),  theme = ttheme)
 ggsave(grid.arrange(tab), 
        file = "COVID-19-IT_table.png", 
-       width = 10, height = 4, dpi = 300)
+       width = 6, height = 1.3, dpi = 300)
 ```
 
 
