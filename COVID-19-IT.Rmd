@@ -56,9 +56,10 @@ where $\theta_1$ is the value at the origin (i.e. $\mu(x=0)$), and $\theta_2$  r
 
 ```{R}
 mod1_start = lm(log(y) ~ x, data = data)
-start = list(th1 = log(coef(mod1_start)[1]), 
-             th2 = coef(mod1_start)[2])
-mod1 = nls(y ~ th1 * exp(th2 * x), data = data, start = start)
+b = unname(coef(mod1_start))
+start = list(th1 = log(b[1]), th2 = b[2])
+exponential <- function(x, th1, th2) th1 * exp(th2 * x)
+mod1 = nls(y ~ exponential(x, th1, th2), data = data, start = start)
 summary(mod1)
 ```
 
@@ -155,6 +156,7 @@ df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1),
                fit2 = predict(mod2, newdata = df),
                fit3 = predict(mod3, newdata = df))
                # fit4 = predict(mod4, newdata = df))
+ylim = c(0, max(df[,c("fit2", "fit3")]))
 ```
 
 ```{R, echo=-2, out.width="100%"}
@@ -164,10 +166,10 @@ ggplot(data, aes(x = date, y = y)) +
   geom_line(data = df, aes(x = date, y = fit2, color = "Logistic")) +
   geom_line(data = df, aes(x = date, y = fit3, color = "Gompertz")) +
   # geom_line(data = df, aes(x = date, y = fit4, color = "Richards")) +
-  coord_cartesian(ylim = c(0, coef(mod2)[1])) +
+  coord_cartesian(ylim = ylim) +
   labs(x = "", y = "Infected", color = "Model") +
-  scale_y_continuous(breaks = seq(0, coef(mod2)[1], by = 10000),
-                     minor_breaks = seq(0, coef(mod2)[1], by = 5000)) +
+  scale_y_continuous(breaks = seq(0, max(ylim), by = 10000),
+                     minor_breaks = seq(0, max(ylim), by = 5000)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   scale_color_manual(values = cols) +
@@ -187,7 +189,6 @@ pred1 = cbind(df[,1:2],
 pred2 = cbind(df[,1:2], 
               predFit(mod2, newdata = df, interval = c("prediction"), level = 0.95))
 
-
 # pred3 <- cbind(df[,1:2],
 #                predFit(mod3, newdata = df, interval = c("prediction"), level = 0.95))
 # :-(( error 
@@ -200,21 +201,24 @@ pred3 = cbind(df[,1:2], fit = df$fit3, lwr = df$fit3, upr = df$fit3)
 ```{R, echo=FALSE, eval=FALSE}
 library(propagate)
 pred1 = predictNLS(mod1, newdata = df["x"], interval = "prediction", level = 0.95, nsim = 1e5)
-pred1 = cbind(df, "lwr" = pred1$summary[,11], "upr" = pred1$summary[,12])
+pred1 = cbind(df[,1:2], "fit" = pred1$summary[,1],
+              "lwr" = pred1$summary[,11], "upr" = pred1$summary[,12])
 pred2 = predictNLS(mod2, newdata = df["x"], interval = c("prediction"), level = 0.95, nsim = 1e5)
-pred2 = cbind(df, "lwr" = pred2$summary[,11], "upr" = pred2$summary[,12])
+pred2 = cbind(df, "fit" = pred2$summary[,1],
+              "lwr" = pred2$summary[,11], "upr" = pred2$summary[,12])
 pred3 = predictNLS(mod3, newdata = df["x"], interval = c("prediction"), level = 0.95, nsim = 1e5)
-pred3 = cbind(df, "lwr" = pred3$summary[,11], "upr" = pred3$summary[,12])
+pred3 = cbind(df, "fit" = pred3$summary[,1],
+              "lwr" = pred3$summary[,11], "upr" = pred3$summary[,12])
 ```
 
 ```{R, echo=FALSE, eval=FALSE}
 source("misc/predictNLS.R")
 pred1 = predictNLS(mod1, newdata = df, interval = "prediction", level = 0.95, nsim = 1e5)
-pred1 = cbind(df, pred1[c("lwr", "upr")])
+pred1 = cbind(df, pred1[c("fit", "lwr", "upr")])
 pred2 = predictNLS(mod2, newdata = df, interval = c("prediction"), level = 0.95, nsim = 1e5)
-pred2 = cbind(df, pred2[c("lwr", "upr")])
+pred2 = cbind(df, pred2[c("fit", "lwr", "upr")])
 pred3 = predictNLS(mod3, newdata = df, interval = c("prediction"), level = 0.95, nsim = 1e5)
-pred3 = cbind(df, pred3[c("lwr", "upr")])
+pred3 = cbind(df, pred3[c("fit", "lwr", "upr")])
 ```
 
 ```{R, echo=-2, out.width="100%"}
