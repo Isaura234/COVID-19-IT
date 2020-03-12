@@ -125,6 +125,11 @@ tab = data.frame(loglik = sapply(models, logLik),
 knitr::kable(tab)
 ```
 
+```{r, echo=FALSE}
+kableExtra::save_kable(knitr::kable(tab), file = "tab.png")
+```
+
+
 ```{R, out.width="100%"}
 cols <- c("Exponential" = "red3", "Logistic" = "dodgerblue3",
           "Gompertz" = "azure4", "Richards" = "forestgreen")
