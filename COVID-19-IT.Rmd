@@ -45,6 +45,13 @@ data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data)
 ```
 
+```{r, echo=FALSE, eval=FALSE}
+plot(data$date[-1], diff(data$y), type = "h", lwd = 2)
+plot(data$date[-1], diff(data$y)/head(data$y,-1)*100, type = "h", lwd = 2)
+plot(data$date[-1], log(data$y[-1]/head(data$y,-1)))
+```
+
+
 ## Nonlinear grow models
 
 ### Exponential growth model
