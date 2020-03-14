@@ -6,14 +6,13 @@ Data source: https://github.com/pcm-dpc/COVID-19
 
 Full report available at [COVID-19-IT.html](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-IT.html)  
   
-  
-**Total infected**
+## Total infected
 
 <img src="COVID-19-IT_infected_table.png" alt="table" width="80%"/>
 
 <img src="COVID-19-IT_infected_plot.png" alt="graph" width="80%"/>
 
-**Total deceased**
+## Total deceased
 
 <img src="COVID-19-IT_deceased_table.png" alt="table" width="80%"/>
 
