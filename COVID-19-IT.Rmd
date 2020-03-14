@@ -384,7 +384,7 @@ ggplot(data, aes(x = date, y = y)) +
   geom_line(aes(y = fitted(mod2), color = "Logistic")) +
   geom_line(aes(y = fitted(mod3), color = "Gompertz")) +
   # geom_line(aes(y = fitted(mod4), color = "Richards")) +
-  labs(x = "", y = "Infected", color = "Model") +
+  labs(x = "", y = "Deceased", color = "Model") +
   scale_color_manual(values = cols) +
   scale_y_continuous(breaks = seq(0, coef(mod2)[1], by = 500),
                      minor_breaks = seq(0, coef(mod2)[1], by = 100)) +
@@ -416,7 +416,7 @@ ggplot(data, aes(x = date, y = y)) +
   geom_line(data = df, aes(x = date, y = fit3, color = "Gompertz")) +
   # geom_line(data = df, aes(x = date, y = fit4, color = "Richards")) +
   coord_cartesian(ylim = ylim) +
-  labs(x = "", y = "Infected", color = "Model") +
+  labs(x = "", y = "Deceased", color = "Model") +
   scale_y_continuous(breaks = seq(0, max(ylim), by = 1000),
                      minor_breaks = seq(0, max(ylim), by = 1000)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
@@ -463,7 +463,7 @@ ggplot(data, aes(x = date, y = y)) +
   # geom_ribbon(data = pred4, aes(x = date, ymin = lwr, ymax = upr), 
   #             inherit.aes = FALSE, fill = cols[4], alpha=0.3) +
   coord_cartesian(ylim = c(0, max(pred2$upr))) +
-  labs(x = "", y = "Infected", color = "Model") +
+  labs(x = "", y = "Deceased", color = "Model") +
   scale_y_continuous(minor_breaks = seq(0, max(pred2$upr), by = 500)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
