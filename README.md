@@ -18,4 +18,9 @@ Full report available at [COVID-19-IT.html](https://htmlpreview.github.io/?https
 
 <img src="COVID-19-IT_deceased_plot.png" alt="graph" width="80%"/>
 
+## Total recovered
+
+<img src="COVID-19-IT_recovered_table.png" alt="table" width="80%"/>
+
+<img src="COVID-19-IT_recovered_plot.png" alt="graph" width="80%"/>
 
