@@ -262,7 +262,7 @@ ggplot(data, aes(x = date, y = y)) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
-ggsave(file = "COVID-19-IT_infected_plot.png", width = 7, height = 6, dpi = 300)
+ggsave(file = "COVID-19-IT_recovered_plot.png", width = 7, height = 6, dpi = 300)
 ```
 
 # Modelling total deceased 
