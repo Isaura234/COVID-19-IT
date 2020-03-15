@@ -23,6 +23,7 @@ opts_chunk$set(fig.align = "center",
 
 library(ggplot2)
 library(gridExtra)
+source("misc/predictMBBnls.R")  # experimental
 ```
 
 # Data 
@@ -211,49 +212,30 @@ ggplot(data, aes(x = date, y = y)) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
-ggsave(file = "COVID-19-IT_infected_plot.png", width = 7, height = 6, dpi = 300)
 ```
 
 ### Prediction intervals
 
-```{R}
-library(investr)
-pred1 = cbind(df[,1:2], 
-              predFit(mod1, newdata = df, interval = c("prediction"), level = 0.95))
+```{r}
+# compute prediction using Moving Block Bootstrap (MBB) for nls
+df = data.frame(x = seq(min(data$x), max(data$x)+14))
+df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1))
 
-pred2 = cbind(df[,1:2], 
-              predFit(mod2, newdata = df, interval = c("prediction"), level = 0.95))
+pred1 = cbind(df, "fit" = predict(mod1, newdata = df), "lwr" = NA, "upr" = NA)
+pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])
 
-# pred3 <- cbind(df[,1:2],
-#                predFit(mod3, newdata = df, interval = c("prediction"), level = 0.95))
-# :-(( error 
-pred3 = cbind(df[,1:2], fit = df$fit3, lwr = df$fit3, upr = df$fit3)
+pred2 = cbind(df, "fit" = predict(mod2, newdata = df), "lwr" = NA, "upr" = NA)
+pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])
 
-# pred4 = cbind(df[,1:2], 
-#               predFit(mod4, newdata = df, interval = c("prediction"), level = 0.95))
-```
+pred3 = cbind(df, "fit" = predict(mod3, newdata = df), "lwr" = NA, "upr" = NA)
+pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
 
-```{R, echo=FALSE, eval=FALSE}
-library(propagate)
-pred1 = predictNLS(mod1, newdata = df["x"], interval = "prediction", level = 0.95, nsim = 1e5)
-pred1 = cbind(df[,1:2], "fit" = pred1$summary[,1],
-              "lwr" = pred1$summary[,11], "upr" = pred1$summary[,12])
-pred2 = predictNLS(mod2, newdata = df["x"], interval = c("prediction"), level = 0.95, nsim = 1e5)
-pred2 = cbind(df, "fit" = pred2$summary[,1],
-              "lwr" = pred2$summary[,11], "upr" = pred2$summary[,12])
-pred3 = predictNLS(mod3, newdata = df["x"], interval = c("prediction"), level = 0.95, nsim = 1e5)
-pred3 = cbind(df, "fit" = pred3$summary[,1],
-              "lwr" = pred3$summary[,11], "upr" = pred3$summary[,12])
-```
+# predictions for next day
+subset(pred1, x == max(data$x)+1)
+subset(pred2, x == max(data$x)+1)
+subset(pred3, x == max(data$x)+1)
 
-```{R, echo=FALSE, eval=FALSE}
-source("misc/predictNLS.R")
-pred1 = predictNLS(mod1, newdata = df, interval = "prediction", level = 0.95, nsim = 1e5)
-pred1 = cbind(df, pred1[c("fit", "lwr", "upr")])
-pred2 = predictNLS(mod2, newdata = df, interval = c("prediction"), level = 0.95, nsim = 1e5)
-pred2 = cbind(df, pred2[c("fit", "lwr", "upr")])
-pred3 = predictNLS(mod3, newdata = df, interval = c("prediction"), level = 0.95, nsim = 1e5)
-pred3 = cbind(df, pred3[c("fit", "lwr", "upr")])
+ylim = c(0, max(pred2$upr, pred3$upr, na.rm=TRUE))
 ```
 
 ```{R, echo=-2, out.width="100%"}
@@ -271,15 +253,16 @@ ggplot(data, aes(x = date, y = y)) +
               inherit.aes = FALSE, fill = cols[3], alpha=0.3) +
   # geom_ribbon(data = pred4, aes(x = date, ymin = lwr, ymax = upr), 
   #             inherit.aes = FALSE, fill = cols[4], alpha=0.3) +
-  coord_cartesian(ylim = c(0, max(pred2$upr))) +
+  coord_cartesian(ylim = c(0, max(ylim))) +
   labs(x = "", y = "Infected", color = "Model") +
-  scale_y_continuous(minor_breaks = seq(0, max(pred2$upr), by = 5000)) +
+  scale_y_continuous(minor_breaks = seq(0, max(ylim), by = 10000)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   scale_color_manual(values = cols) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
+ggsave(file = "COVID-19-IT_infected_plot.png", width = 7, height = 6, dpi = 300)
 ```
 
 # Modelling total deceased 
@@ -424,27 +407,34 @@ ggplot(data, aes(x = date, y = y)) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
-ggsave(file = "COVID-19-IT_deceased_plot.png", width = 7, height = 6, dpi = 300)
 ```
 
 ### Prediction intervals
 
-```{R}
-library(investr)
-pred1 = cbind(df[,1:2], 
-              predFit(mod1, newdata = df, interval = c("prediction"), level = 0.95))
+```{r}
+# compute prediction using Moving Block Bootstrap (MBB) for nls
+df = data.frame(x = seq(min(data$x), max(data$x)+14))
+df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1))
 
-pred2 = cbind(df[,1:2], 
-              predFit(mod2, newdata = df, interval = c("prediction"), level = 0.95))
+pred1 = cbind(df, "fit" = predict(mod1, newdata = df), "lwr" = NA, "upr" = NA)
+pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])
 
-pred3 <- cbind(df[,1:2],
-               predFit(mod3, newdata = df, interval = c("prediction"), level = 0.95))
-# pred3 = cbind(df[,1:2], fit = df$fit3, lwr = df$fit3, upr = df$fit3)
+pred2 = cbind(df, "fit" = predict(mod2, newdata = df), "lwr" = NA, "upr" = NA)
+pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])
 
-# pred4 = cbind(df[,1:2],
-#               predFit(mod4, newdata = df, interval = c("prediction"), level = 0.95))
-# error :((
-pred4 = cbind(df[,1:2], fit = df$fit4, lwr = df$fit4, upr = df$fit4)
+pred3 = cbind(df, "fit" = predict(mod3, newdata = df), "lwr" = NA, "upr" = NA)
+pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
+
+pred4 = cbind(df, "fit" = predict(mod4, newdata = df), "lwr" = NA, "upr" = NA)
+pred4[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod4, df[df$x > max(data$x),])
+
+# predictions for next day
+subset(pred1, x == max(data$x)+1)
+subset(pred2, x == max(data$x)+1)
+subset(pred3, x == max(data$x)+1)
+subset(pred4, x == max(data$x)+1)
+
+ylim = c(0, max(pred2$upr, pred3$upr, pred4$upr, na.rm=TRUE))
 ```
 
 ```{R, echo=-2, out.width="100%"}
@@ -462,16 +452,16 @@ ggplot(data, aes(x = date, y = y)) +
               inherit.aes = FALSE, fill = cols[3], alpha=0.3) +
   geom_ribbon(data = pred4, aes(x = date, ymin = lwr, ymax = upr), 
               inherit.aes = FALSE, fill = cols[4], alpha=0.3) +
-  coord_cartesian(ylim = c(0, max(pred2$upr))) +
+  coord_cartesian(ylim = c(0, max(ylim))) +
   labs(x = "", y = "Deceased", color = "Model") +
-  scale_y_continuous(breaks = seq(0, max(pred2$upr), by = 500),
-                     minor_breaks = seq(0, max(pred2$upr), by = 250)) +
+  scale_y_continuous(minor_breaks = seq(0, max(ylim), by = 10000)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   scale_color_manual(values = cols) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
+ggsave(file = "COVID-19-IT_deceased_plot.png", width = 7, height = 6, dpi = 300)
 ```
 
 # Modelling recovered
@@ -609,26 +599,30 @@ ggplot(data, aes(x = date, y = y)) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
-ggsave(file = "COVID-19-IT_recovered_plot.png", width = 7, height = 6, dpi = 300)
 ```
 
 ### Prediction intervals
 
-```{R}
-library(investr)
-pred1 = cbind(df[,1:2], 
-              predFit(mod1, newdata = df, interval = c("prediction"), level = 0.95))
+```{r}
+# compute prediction using Moving Block Bootstrap (MBB) for nls
+df = data.frame(x = seq(min(data$x), max(data$x)+14))
+df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1))
 
-pred2 = cbind(df[,1:2], 
-              predFit(mod2, newdata = df, interval = c("prediction"), level = 0.95))
+pred1 = cbind(df, "fit" = predict(mod1, newdata = df), "lwr" = NA, "upr" = NA)
+pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])
 
-# pred3 <- cbind(df[,1:2],
-#                predFit(mod3, newdata = df, interval = c("prediction"), level = 0.95))
-pred3 = cbind(df[,1:2], fit = df$fit3, lwr = df$fit3, upr = df$fit3)
+pred2 = cbind(df, "fit" = predict(mod2, newdata = df), "lwr" = NA, "upr" = NA)
+pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])
 
-# pred4 = cbind(df[,1:2],
-#               predFit(mod4, newdata = df, interval = c("prediction"), level = 0.95))
-# error :((
+pred3 = cbind(df, "fit" = predict(mod3, newdata = df), "lwr" = NA, "upr" = NA)
+pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
+
+# predictions for next day
+subset(pred1, x == max(data$x)+1)
+subset(pred2, x == max(data$x)+1)
+subset(pred3, x == max(data$x)+1)
+
+ylim = c(0, max(pred2$upr, pred3$upr, na.rm=TRUE))
 ```
 
 ```{R, echo=-2, out.width="100%"}
@@ -637,7 +631,7 @@ ggplot(data, aes(x = date, y = y)) +
   geom_line(data = pred1, aes(x = date, y = fit, color = "Exponential")) +
   geom_line(data = pred2, aes(x = date, y = fit, color = "Logistic")) +
   geom_line(data = pred3, aes(x = date, y = fit, color = "Gompertz")) +
-  # geom_line(data = pred4, aes(x = date, y = fit, color = "Richards")) +
+#  geom_line(data = pred4, aes(x = date, y = fit, color = "Richards")) +
   geom_ribbon(data = pred1, aes(x = date, ymin = lwr, ymax = upr), 
               inherit.aes = FALSE, fill = cols[1], alpha=0.3) +
   geom_ribbon(data = pred2, aes(x = date, ymin = lwr, ymax = upr), 
@@ -646,15 +640,18 @@ ggplot(data, aes(x = date, y = y)) +
               inherit.aes = FALSE, fill = cols[3], alpha=0.3) +
   # geom_ribbon(data = pred4, aes(x = date, ymin = lwr, ymax = upr), 
   #             inherit.aes = FALSE, fill = cols[4], alpha=0.3) +
-  coord_cartesian(ylim = c(0, max(pred2$upr))) +
+  coord_cartesian(ylim = c(0, max(ylim))) +
   labs(x = "", y = "Recovered", color = "Model") +
-  scale_y_continuous(breaks = seq(0, max(pred2$upr), by = 5000),
-                     minor_breaks = seq(0, max(pred2$upr), by = 1000)) +
+  scale_y_continuous(breaks = seq(0, max(ylim), by = 5000),
+                     minor_breaks = seq(0, max(ylim), by = 1000)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   scale_color_manual(values = cols) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
+ggsave(file = "COVID-19-IT_recovered_plot.png", width = 7, height = 6, dpi = 300)
 ```
+
+
 
