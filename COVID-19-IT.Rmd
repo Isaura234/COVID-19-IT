@@ -454,7 +454,7 @@ ggplot(data, aes(x = date, y = y)) +
               inherit.aes = FALSE, fill = cols[4], alpha=0.3) +
   coord_cartesian(ylim = c(0, max(ylim))) +
   labs(x = "", y = "Deceased", color = "Model") +
-  scale_y_continuous(minor_breaks = seq(0, max(ylim), by = 10000)) +
+  scale_y_continuous(minor_breaks = seq(0, max(ylim), by = 1000)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   scale_color_manual(values = cols) +
