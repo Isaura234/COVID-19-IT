@@ -6,21 +6,28 @@ Below a summary table of fitted models is reported with a graph of data points a
 
 Data source: https://github.com/pcm-dpc/COVID-19  
 
-For the full report see  [COVID-19-IT.html](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-IT.html)  
+For the **full reports** see
+
+- [Italy](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-IT.html)  
   
-## Total infected
+- [Lombardia](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-Lombardia.html)  
+
+- [Umbria](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-IT.html)  
+
+
+## Total infected (Italy)
 
 <img src="COVID-19-IT_infected_table.png" alt="table" width="80%"/>
 
 <img src="COVID-19-IT_infected_plot.png" alt="graph" width="80%"/>
 
-## Total deceased
+## Total deceased (Italy)
 
 <img src="COVID-19-IT_deceased_table.png" alt="table" width="80%"/>
 
 <img src="COVID-19-IT_deceased_plot.png" alt="graph" width="80%"/>
 
-## Total recovered
+## Total recovered (Italy)
 
 <img src="COVID-19-IT_recovered_table.png" alt="table" width="80%"/>
 

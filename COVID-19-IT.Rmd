@@ -25,6 +25,16 @@ library(ggplot2)
 library(gridExtra)
 source("misc/predictMBBnls.R")  # experimental
 
+AICc <- function(object, ..., k = 2) 
+{
+  n      <- nobs(object)
+  loglik <- logLik(object)
+  df     <- attr(loglik, "df")
+  AIC <- -2 * c(loglik) + k * df
+  AICc <- AIC + k * df * (df +1)/(n - df - 1)
+  return(AICc)
+}
+
 peaks <- function (x, span = 3) 
 {
   z <- embed(x, span)
@@ -33,6 +43,7 @@ peaks <- function (x, span = 3)
   result <- c(rep(FALSE, s), v, rep(FALSE, s))
   result
 }
+
 
 library(numDeriv)
 
@@ -66,9 +77,27 @@ richardsGrad <- function(object, x, ...)
 
 cols <- c("Exponential" = "red3", "Logistic" = "dodgerblue3",
           "Gompertz" = "azure4", "Richards" = "forestgreen")
+
+tab_theme <- ttheme_default(
+  core = list(# bg_params = list(fill = NA, col=NA),
+              fg_params=list(fontface=1, fontsize = 10)),
+  colhead = list(fg_params=list(col="black", fontface=2, fontsize = 10)),
+  rowhead = list(fg_params=list(col="black", fontface=2, hjust=0, x=0,
+                                fontsize = 10),
+                 bg_params=list(fill = c("grey95", "grey90"))))
 ```
 
 # Nonlinear growth models
+
+Nonlinear growth models represent an instance of *nonlinear regression models*, a class of models taking the general form 
+$$
+y = \mu(x, \theta) + \epsilon,
+$$
+where $\mu(x, \theta)$ is the mean function which depends on a possibly vector-valued parameter $\theta$, and a possibly vector-valued predictor $x$.
+The stochastic component $\epsilon$ represents the error with mean zero and constant variance. Usually, a Gaussian distribution is also assumed for the error term. 
+
+By defining the mean function $\mu(x, \theta)$ we may obtain several different models, all characterized by the fact that parameters $\theta$ enter in a nonlinear way into the equation. Parameters are usually estimated by *nonlinear least squares* which aims at minimizing the residual sum of squares.
+
 
 ## Exponential
 
@@ -116,6 +145,7 @@ DT::datatable(COVID19IT)
 
 Warnings
 ```
+- 17/03/2020: dati Provincia di Rimini non aggiornati
 - 16/03/2020: dati P.A. Trento e Puglia non pervenuti.
 - 11/03/2020: dati Regione Abruzzo non pervenuti.
 - 10/03/2020: dati Regione Lombardia parziali.
@@ -131,7 +161,6 @@ Warnings
 data = data.frame(date = COVID19IT$data,
                   y = COVID19IT$totale_casi)
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
-
 DT::datatable(data, options = list("pageLength" = 5))
 ```
 
@@ -171,16 +200,14 @@ summary(mod3)
 ### Richards
 
 ```{R, eval=FALSE}
-library(nlmrt)
-
 richards <- function(x, th1, th2, th3) th1*(1 - exp(-th2*x))^th3
 Loss  <- function(th, y, x) sum((y - richards(x, th[1], th[2], th[3]))^2) 
 start <- optim(par = c(coef(mod2)[1], 0.001, 1), fn = Loss, 
                y = data$y, x = data$x)$par
 names(start) <- c("th1", "th2", "th3")
 mod4 = nls(y ~ richards(x, th1, th2, th3), data = data, start = start,
-           trace = TRUE, algorithm = "port", 
-           control = nls.control(maxiter = 1000, tol = 1))
+           trace = TRUE, algorithm = "plinear", 
+           control = nls.control(maxiter = 1000, tol = 0.1))
 # algorithm is not converging... 
 summary(mod4)
 # library(nlmrt)
@@ -200,20 +227,17 @@ tab = data.frame(loglik = sapply(models, logLik),
                  Rsquare = sapply(models, function(m) 
                                   cor(data$y, fitted(m))^2),
                  AIC = sapply(models, AIC),
+                 AICc = sapply(models, AICc),
                  BIC = sapply(models, BIC))
+sel <- apply(tab[,4:6], 2, which.min)
+tab$"" <- sapply(tabulate(sel, nbins = length(models))+1, symnum,
+                 cutpoints = 0:4, symbols = c("", "*", "**", "***"))
 knitr::kable(tab)
 ```
 
 ```{r, echo=FALSE}
 # create figure with table for inclusion in README.md
-ttheme <- ttheme_default(
-  core = list(# bg_params = list(fill = NA, col=NA),
-              fg_params=list(fontface=1, fontsize = 10)),
-  colhead = list(fg_params=list(col="black", fontface=2, fontsize = 10)),
-  rowhead = list(fg_params=list(col="black", fontface=2, hjust=0, x=0,
-                                fontsize = 10),
-                 bg_params=list(fill = c("grey95", "grey90"))))
-tab <- tableGrob(signif(tab,7),  theme = ttheme)
+tab <- tableGrob(tab, theme = tab_theme)
 ggsave(grid.arrange(tab), 
        file = "COVID-19-IT_infected_table.png", 
        width = 6, height = 1.3, dpi = 300)
@@ -270,7 +294,7 @@ ggplot(data, aes(x = date, y = y)) +
         axis.text.x = element_text(angle=60, hjust=1))
 ```
 
-```{r}
+```{r, eval=FALSE, echo=FALSE}
 df = data.frame(x = seq(min(data$x), max(data$x)+90))
 df = cbind(df, 
            "y" = c(NA, diff(data$y), rep(NA, nrow(df)-nrow(data))),
@@ -349,7 +373,7 @@ ggplot(data, aes(x = date, y = y)) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
-ggsave(file = "COVID-19-IT_recovered_plot.png", width = 7, height = 6, dpi = 300)
+ggsave(file = "COVID-19-IT_infected_plot.png", width = 7, height = 6, dpi = 300)
 ```
 
 # Modelling total deceased 
@@ -359,7 +383,6 @@ ggsave(file = "COVID-19-IT_recovered_plot.png", width = 7, height = 6, dpi = 300
 data = data.frame(date = COVID19IT$data,
                   y = COVID19IT$deceduti)
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
-
 DT::datatable(data, options = list("pageLength" = 5))
 ```
 
@@ -386,15 +409,14 @@ summary(mod2)
 ### Gompertz
 
 ```{R}
-# mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data)
-# error :((
+ mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data)
 # manually set starting values
-start = list(Asym = coef(mod2)[1])
-tmp = list(y = log(log(start$Asym) - log(data$y)), x = data$x)
-b = unname(coef(lm(y ~ x, data = tmp)))
-start = c(start, c(b2 = exp(b[1]), b3 = exp(b[2])))
-mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data, start = start, 
-           control = nls.control(maxiter = 10000))
+# start = list(Asym = coef(mod2)[1])
+# tmp = list(y = log(log(start$Asym) - log(data$y)), x = data$x)
+# b = unname(coef(lm(y ~ x, data = tmp)))
+# start = c(start, c(b2 = exp(b[1]), b3 = exp(b[2])))
+# mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data, start = start, 
+#            control = nls.control(maxiter = 10000))
 summary(mod3)
 ```
 
@@ -424,19 +446,16 @@ tab = data.frame(loglik = sapply(models, logLik),
                  Rsquare = sapply(models, function(m) 
                                   cor(data$y, fitted(m))^2),
                  AIC = sapply(models, AIC),
+                 AICc = sapply(models, AICc),
                  BIC = sapply(models, BIC))
+sel <- apply(tab[,4:6], 2, which.min)
+tab$"" <- sapply(tabulate(sel, nbins = length(models))+1, symnum,
+                 cutpoints = 0:4, symbols = c("", "*", "**", "***"))
 knitr::kable(tab)
 ```
 
 ```{r, echo=FALSE}
-ttheme <- ttheme_default(
-  core = list(# bg_params = list(fill = NA, col=NA),
-              fg_params=list(fontface=1, fontsize = 10)),
-  colhead = list(fg_params=list(col="black", fontface=2, fontsize = 10)),
-  rowhead = list(fg_params=list(col="black", fontface=2, hjust=0, x=0,
-                                fontsize = 10),
-                 bg_params=list(fill = c("grey95", "grey90"))))
-tab <- tableGrob(signif(tab,7),  theme = ttheme)
+tab <- tableGrob(tab,  theme = tab_theme)
 ggsave(grid.arrange(tab), 
        file = "COVID-19-IT_deceased_table.png", 
        width = 6, height = 1.3, dpi = 300)
@@ -493,7 +512,7 @@ ggplot(data, aes(x = date, y = y)) +
         axis.text.x = element_text(angle=60, hjust=1))
 ```
 
-```{r}
+```{r, eval=FALSE, echo=FALSE}
 df = data.frame(x = seq(min(data$x), max(data$x)+90))
 df = cbind(df, 
            "y" = c(NA, diff(data$y), rep(NA, nrow(df)-nrow(data))),
@@ -510,8 +529,7 @@ ggplot(df, aes(x = date, y = y)) +
   geom_line(data = df, aes(x = date, y = grad2, color = "Logistic")) +
   geom_line(data = df, aes(x = date, y = grad3, color = "Gompertz")) +
   geom_line(data = df, aes(x = date, y = grad4, color = "Richards")) +
-  geom_vline(data = df[peak,], aes(xintercept = date), 
-             lty = 2, col = cols[2:3]) +
+  geom_vline(data = df[peak,], aes(xintercept = date), lty = 2) +
   coord_cartesian(ylim = range(df$grad2, df$grad3, df$grad4)) +
   labs(x = "", y = expression(paste(Delta, "Deceased")), color = "Model") +
   scale_color_manual(values = cols) +
@@ -591,7 +609,6 @@ ggsave(file = "COVID-19-IT_deceased_plot.png", width = 7, height = 6, dpi = 300)
 data = data.frame(date = COVID19IT$data,
                   y = COVID19IT$dimessi_guariti)
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
-
 DT::datatable(data, options = list("pageLength" = 5))
 ```
 
@@ -649,19 +666,16 @@ tab = data.frame(loglik = sapply(models, logLik),
                  Rsquare = sapply(models, function(m) 
                                   cor(data$y, fitted(m))^2),
                  AIC = sapply(models, AIC),
+                 AICc = sapply(models, AICc),
                  BIC = sapply(models, BIC))
+sel <- apply(tab[,4:6], 2, which.min)
+tab$"" <- sapply(tabulate(sel, nbins = length(models))+1, symnum,
+                 cutpoints = 0:4, symbols = c("", "*", "**", "***"))
 knitr::kable(tab)
 ```
 
 ```{r, echo=FALSE}
-ttheme <- ttheme_default(
-  core = list(# bg_params = list(fill = NA, col=NA),
-              fg_params=list(fontface=1, fontsize = 10)),
-  colhead = list(fg_params=list(col="black", fontface=2, fontsize = 10)),
-  rowhead = list(fg_params=list(col="black", fontface=2, hjust=0, x=0,
-                                fontsize = 10),
-                 bg_params=list(fill = c("grey95", "grey90"))))
-tab <- tableGrob(signif(tab,7),  theme = ttheme)
+tab <- tableGrob(tab,  theme = tab_theme)
 ggsave(grid.arrange(tab), 
        file = "COVID-19-IT_recovered_table.png", 
        width = 6, height = 1.3, dpi = 300)
@@ -718,7 +732,7 @@ ggplot(data, aes(x = date, y = y)) +
         axis.text.x = element_text(angle=60, hjust=1))
 ```
 
-```{r}
+```{r, echo=FALSE, eval=FALSE}
 df = data.frame(x = seq(min(data$x), max(data$x)+90))
 df = cbind(df, 
            "y" = c(NA, diff(data$y), rep(NA, nrow(df)-nrow(data))),
