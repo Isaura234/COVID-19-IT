@@ -12,7 +12,7 @@ For the **full reports** see
   
 - [Lombardia](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-Lombardia.html)  
 
-- [Umbria](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-IT.html)  
+- [Umbria](https://htmlpreview.github.io/?https://github.com/luca-scr/COVID-19-IT/blob/master/COVID-19-Umbria.html)  
 
 
 ## Total infected (Italy)
