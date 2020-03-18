@@ -92,12 +92,11 @@ summary(mod2)
 # mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data,
 #            control = nls.control(maxiter = 10000))
 start = list(Asym = coef(mod2)[1])
-tmp = list(y = log(log(start$Asym) - log(data$y)), x = data$x)
-b = unname(coef(lm(y ~ x, data = tmp)))
+tmp = data.frame(y = log(log(start$Asym) - log(data$y)), x = data$x)
+b = unname(coef(lm(y ~ x, data = tmp[is.finite(tmp$y),])))
 start = c(start, c(b2 = exp(b[1]), b3 = exp(b[2])))
 mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data, start = start, 
            control = nls.control(maxiter = 10000))
-# no convergence :-((
 summary(mod3)
 ```
 
@@ -120,8 +119,8 @@ summary(mod4)
 
 ```{R}
 models = list("Exponential model" = mod1, 
-              "Logistic model" = mod2)
-              # "Gompertz model" = mod3)
+              "Logistic model" = mod2,
+              "Gompertz model" = mod3)
               # "Richards model" = mod4)
 tab = data.frame(loglik = sapply(models, logLik),
                  df = sapply(models, function(m) attr(logLik(m), "df")),
@@ -141,7 +140,7 @@ ggplot(data, aes(x = date, y = y)) +
   geom_point() +
   geom_line(aes(y = fitted(mod1), color = "Exponential")) +
   geom_line(aes(y = fitted(mod2), color = "Logistic")) +
-  # geom_line(aes(y = fitted(mod3), color = "Gompertz")) +
+  geom_line(aes(y = fitted(mod3), color = "Gompertz")) +
   # geom_line(aes(y = fitted(mod4), color = "Richards")) +
   labs(x = "", y = "Infected", color = "Model") +
   scale_color_manual(values = cols) +
@@ -161,10 +160,10 @@ ggplot(data, aes(x = date, y = y)) +
 df = data.frame(x = seq(min(data$x), max(data$x)+14))
 df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1),
                fit1 = predict(mod1, newdata = df),
-               fit2 = predict(mod2, newdata = df))
-               # fit3 = predict(mod3, newdata = df))
+               fit2 = predict(mod2, newdata = df),
+               fit3 = predict(mod3, newdata = df))
                # fit4 = predict(mod4, newdata = df))
-ylim = c(0, max(df[,c("fit2")]))
+ylim = c(0, max(df[,c("fit2", "fit3")]))
 ```
 
 ```{R, echo=-2, out.width="100%"}
@@ -172,7 +171,7 @@ ggplot(data, aes(x = date, y = y)) +
   geom_point() +
   geom_line(data = df, aes(x = date, y = fit1, color = "Exponential")) +
   geom_line(data = df, aes(x = date, y = fit2, color = "Logistic")) +
-  # geom_line(data = df, aes(x = date, y = fit3, color = "Gompertz")) +
+  geom_line(data = df, aes(x = date, y = fit3, color = "Gompertz")) +
   # geom_line(data = df, aes(x = date, y = fit4, color = "Richards")) +
   coord_cartesian(ylim = ylim) +
   labs(x = "", y = "Infected", color = "Model") +
@@ -199,13 +198,13 @@ pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(
 pred2 = cbind(df, "fit" = predict(mod2, newdata = df), "lwr" = NA, "upr" = NA)
 pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])
 
-# pred3 = cbind(df, "fit" = predict(mod3, newdata = df), "lwr" = NA, "upr" = NA)
-# pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
+pred3 = cbind(df, "fit" = predict(mod3, newdata = df), "lwr" = NA, "upr" = NA)
+pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
 
 # predictions for next day
 pred = rbind(subset(pred1, x == max(data$x)+1, select = 2:5),
-             subset(pred2, x == max(data$x)+1, select = 2:5))
-             # subset(pred3, x == max(data$x)+1, select = 2:5))
+             subset(pred2, x == max(data$x)+1, select = 2:5),
+             subset(pred3, x == max(data$x)+1, select = 2:5))
 print(pred, digits = 3)
 
 ylim = c(0, max(pred2$upr, na.rm=TRUE))
@@ -216,14 +215,14 @@ ggplot(data, aes(x = date, y = y)) +
   geom_point() +
   geom_line(data = pred1, aes(x = date, y = fit, color = "Exponential")) +
   geom_line(data = pred2, aes(x = date, y = fit, color = "Logistic")) +
-  # geom_line(data = pred3, aes(x = date, y = fit, color = "Gompertz")) +
+  geom_line(data = pred3, aes(x = date, y = fit, color = "Gompertz")) +
   # geom_line(data = pred4, aes(x = date, y = fit, color = "Richards")) +
   geom_ribbon(data = pred1, aes(x = date, ymin = lwr, ymax = upr), 
               inherit.aes = FALSE, fill = cols[1], alpha=0.3) +
   geom_ribbon(data = pred2, aes(x = date, ymin = lwr, ymax = upr), 
               inherit.aes = FALSE, fill = cols[2], alpha=0.3) +
-  # geom_ribbon(data = pred3, aes(x = date, ymin = lwr, ymax = upr),
-  #             inherit.aes = FALSE, fill = cols[3], alpha=0.3) +
+  geom_ribbon(data = pred3, aes(x = date, ymin = lwr, ymax = upr),
+              inherit.aes = FALSE, fill = cols[3], alpha=0.3) +
   # geom_ribbon(data = pred4, aes(x = date, ymin = lwr, ymax = upr), 
   #             inherit.aes = FALSE, fill = cols[4], alpha=0.3) +
   coord_cartesian(ylim = c(0, max(ylim))) +
@@ -237,3 +236,28 @@ ggplot(data, aes(x = date, y = y)) +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
 ```
+
+```{r, eval=FALSE, echo=FALSE}
+df = data.frame(x = seq(min(data$x), max(data$x)+90))
+df = cbind(df, 
+           "y" = c(NA, diff(data$y), rep(NA, nrow(df)-nrow(data))),
+           "date" = as.Date(df$x, origin = data$date[1]-1),
+           "grad1" = exponentialGrad(mod1, df$x),
+           "grad2" = logisticGrad(mod2, df$x))
+peak = which(peaks(df$grad2)) # which(peaks(df$grad3)))
+
+ggplot(df, aes(x = date, y = y)) + 
+  geom_point() +
+  geom_line(data = df, aes(x = date, y = grad1, color = "Exponential")) +
+  geom_line(data = df, aes(x = date, y = grad2, color = "Logistic")) +
+  geom_vline(data = df[peak,], aes(xintercept = date), lty = 2) +
+  coord_cartesian(ylim = range(df$grad2)) +
+  labs(x = "", y = expression(paste(Delta, "Infected")), color = "Model") +
+  scale_color_manual(values = cols) +
+  annotate(geom = "text", x = df[peak[1],"date"], y = df[peak[1],"grad2"],
+           label = df[peak[1],"date"], col = cols[2], 
+           hjust = -0.1, vjust = -0.1) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
