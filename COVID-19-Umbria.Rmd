@@ -88,7 +88,7 @@ summary(mod2)
 
 ### Gompertz
 
-```{R, eval=FALSE}
+```{R}
 # mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data,
 #            control = nls.control(maxiter = 10000))
 start = list(Asym = coef(mod2)[1])
