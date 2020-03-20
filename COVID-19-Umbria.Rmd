@@ -49,9 +49,9 @@ Source: https://github.com/pcm-dpc/COVID-19
 
 ```{R}
 url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv"
-COVID19REGIONI <- read.csv(file = url, stringsAsFactors = FALSE)
-COVID19REGIONI$data <- as.Date(COVID19REGIONI$data)
-COVID19 <- subset(COVID19REGIONI, denominazione_regione == "Umbria")
+COVID19 <- read.csv(file = url, stringsAsFactors = FALSE)
+COVID19$data <- as.Date(COVID19$data)
+COVID19 <- subset(COVID19, denominazione_regione == "Umbria")
 ```
 
 <br>
@@ -193,14 +193,14 @@ ggplot(data, aes(x = date, y = y)) +
 df = data.frame(x = seq(min(data$x), max(data$x)+14))
 df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1))
 
-pred1 = cbind(df, "fit" = predict(mod1, newdata = df), "lwr" = NA, "upr" = NA)
+pred1 = cbind(df, "fit" = predict(mod1, newdata = df))
 pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])
 
 # pred2 = cbind(df, "fit" = predict(mod2, newdata = df), "lwr" = NA, "upr" = NA)
 # pred2[df$x > max(data$x), c("lwr", "upr")] = 
 #   predictMBB.nls(mod2, df[df$x > max(data$x),])
 
-pred3 = cbind(df, "fit" = predict(mod3, newdata = df), "lwr" = NA, "upr" = NA)
+pred3 = cbind(df, "fit" = predict(mod3, newdata = df))
 pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
 
 # predictions for next day
