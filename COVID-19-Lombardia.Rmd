@@ -89,9 +89,9 @@ Source: https://github.com/pcm-dpc/COVID-19
 
 ```{R}
 url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv"
-COVID19REGIONI <- read.csv(file = url, stringsAsFactors = FALSE)
-COVID19REGIONI$data <- as.Date(COVID19REGIONI$data)
-COVID19 <- subset(COVID19REGIONI, denominazione_regione == "Lombardia")
+COVID19 <- read.csv(file = url, stringsAsFactors = FALSE)
+COVID19$data <- as.Date(COVID19$data)
+COVID19 <- subset(COVID19, denominazione_regione == "Lombardia")
 ```
 
 <br>
@@ -149,7 +149,6 @@ names(start) <- c("th1", "th2", "th3")
 mod4 = nls(y ~ richards(x, th1, th2, th3), data = data, start = start,
            # trace = TRUE, # algorithm = "port", 
            control = nls.control(maxiter = 1000, tol = 1e-1))
-# algorithm is not converging... 
 summary(mod4)
 ```
 
@@ -245,7 +244,8 @@ pred4[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod4, df[df$x > max(
 # predictions for next day
 pred = rbind(subset(pred1, x == max(data$x)+1, select = 2:5),
              subset(pred2, x == max(data$x)+1, select = 2:5),
-             subset(pred3, x == max(data$x)+1, select = 2:5))
+             subset(pred3, x == max(data$x)+1, select = 2:5),
+             subset(pred4, x == max(data$x)+1, select = 2:5))
 print(pred, digits = 3)
 
 ylim = c(0, max(pred2$upr, pred3$upr, na.rm=TRUE))
