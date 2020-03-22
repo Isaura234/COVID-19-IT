@@ -140,7 +140,7 @@ summary(mod3)
 
 ### Richards
 
-```{R}
+```{R, eval=FALSE}
 richards <- function(x, th1, th2, th3) th1*(1 - exp(-th2*x))^th3
 Loss  <- function(th, y, x) sum((y - richards(x, th[1], th[2], th[3]))^2) 
 start <- optim(par = c(coef(mod2)[1], 0.001, 1), fn = Loss, 
@@ -157,8 +157,8 @@ summary(mod4)
 ```{R}
 models = list("Exponential model" = mod1, 
               "Logistic model" = mod2, 
-              "Gompertz model" = mod3,
-              "Richards model" = mod4)
+              "Gompertz model" = mod3)
+              # "Richards model" = mod4)
 tab = data.frame(loglik = sapply(models, logLik),
                  df = sapply(models, function(m) attr(logLik(m), "df")),
                  Rsquare = sapply(models, function(m) 
@@ -178,7 +178,7 @@ ggplot(data, aes(x = date, y = y)) +
   geom_line(aes(y = fitted(mod1), color = "Exponential")) +
   geom_line(aes(y = fitted(mod2), color = "Logistic")) +
   geom_line(aes(y = fitted(mod3), color = "Gompertz")) +
-  geom_line(aes(y = fitted(mod4), color = "Richards")) +
+  # geom_line(aes(y = fitted(mod4), color = "Richards")) +
   labs(x = "", y = "Infected", color = "Model") +
   scale_color_manual(values = cols) +
   scale_y_continuous(breaks = seq(0, coef(mod2)[1], by = 5000),
@@ -198,8 +198,8 @@ df = data.frame(x = seq(min(data$x), max(data$x)+14))
 df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1),
                fit1 = predict(mod1, newdata = df),
                fit2 = predict(mod2, newdata = df),
-               fit3 = predict(mod3, newdata = df),
-               fit4 = predict(mod4, newdata = df))
+               fit3 = predict(mod3, newdata = df))
+               # fit4 = predict(mod4, newdata = df))
 ylim = c(0, max(df[,c("fit2", "fit3")]))
 ```
 
@@ -209,7 +209,7 @@ ggplot(data, aes(x = date, y = y)) +
   geom_line(data = df, aes(x = date, y = fit1, color = "Exponential")) +
   geom_line(data = df, aes(x = date, y = fit2, color = "Logistic")) +
   geom_line(data = df, aes(x = date, y = fit3, color = "Gompertz")) +
-  geom_line(data = df, aes(x = date, y = fit4, color = "Richards")) +
+  # geom_line(data = df, aes(x = date, y = fit4, color = "Richards")) +
   coord_cartesian(ylim = ylim) +
   labs(x = "", y = "Infected", color = "Model") +
   scale_y_continuous(breaks = seq(0, max(ylim), by = 10000),
@@ -238,14 +238,14 @@ pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(
 pred3 = cbind(df, "fit" = predict(mod3, newdata = df), "lwr" = NA, "upr" = NA)
 pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
 
-pred4 = cbind(df, "fit" = predict(mod4, newdata = df), "lwr" = NA, "upr" = NA)
-pred4[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod4, df[df$x > max(data$x),])
+# pred4 = cbind(df, "fit" = predict(mod4, newdata = df), "lwr" = NA, "upr" = NA)
+# pred4[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod4, df[df$x > max(data$x),])
 
 # predictions for next day
 pred = rbind(subset(pred1, x == max(data$x)+1, select = 2:5),
              subset(pred2, x == max(data$x)+1, select = 2:5),
-             subset(pred3, x == max(data$x)+1, select = 2:5),
-             subset(pred4, x == max(data$x)+1, select = 2:5))
+             subset(pred3, x == max(data$x)+1, select = 2:5))
+             # subset(pred4, x == max(data$x)+1, select = 2:5))
 print(pred, digits = 3)
 
 ylim = c(0, max(pred2$upr, pred3$upr, na.rm=TRUE))
@@ -257,15 +257,15 @@ ggplot(data, aes(x = date, y = y)) +
   geom_line(data = pred1, aes(x = date, y = fit, color = "Exponential")) +
   geom_line(data = pred2, aes(x = date, y = fit, color = "Logistic")) +
   geom_line(data = pred3, aes(x = date, y = fit, color = "Gompertz")) +
-  geom_line(data = pred4, aes(x = date, y = fit, color = "Richards")) +
+  # geom_line(data = pred4, aes(x = date, y = fit, color = "Richards")) +
   geom_ribbon(data = pred1, aes(x = date, ymin = lwr, ymax = upr), 
               inherit.aes = FALSE, fill = cols[1], alpha=0.3) +
   geom_ribbon(data = pred2, aes(x = date, ymin = lwr, ymax = upr), 
               inherit.aes = FALSE, fill = cols[2], alpha=0.3) +
   geom_ribbon(data = pred3, aes(x = date, ymin = lwr, ymax = upr),
               inherit.aes = FALSE, fill = cols[3], alpha=0.3) +
-  geom_ribbon(data = pred4, aes(x = date, ymin = lwr, ymax = upr), 
-              inherit.aes = FALSE, fill = cols[4], alpha=0.3) +
+  # geom_ribbon(data = pred4, aes(x = date, ymin = lwr, ymax = upr), 
+  #             inherit.aes = FALSE, fill = cols[4], alpha=0.3) +
   coord_cartesian(ylim = c(0, max(ylim))) +
   labs(x = "", y = "Infected", color = "Model") +
   scale_y_continuous(minor_breaks = seq(0, max(ylim), by = 10000)) +
