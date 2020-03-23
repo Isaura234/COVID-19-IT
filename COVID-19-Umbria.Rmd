@@ -194,13 +194,13 @@ df = data.frame(x = seq(min(data$x), max(data$x)+14))
 df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1))
 
 pred1 = cbind(df, "fit" = predict(mod1, newdata = df))
-pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])
+pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])[,2:3]
 
 pred2 = cbind(df, "fit" = predict(mod2, newdata = df))
-pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])
+pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])[,2:3]
 
 pred3 = cbind(df, "fit" = predict(mod3, newdata = df))
-pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
+pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])[,2:3]
 
 # predictions for next day
 pred = rbind(subset(pred1, x == max(data$x)+1, select = 2:5),

@@ -307,7 +307,8 @@ df = cbind(df,
 peak = c(which(peaks(df$grad2)), which(peaks(df$grad3)))
 
 ggplot(df, aes(x = date, y = y)) + 
-  geom_point() +
+  geom_point(size = 1) +
+  geom_segment(aes(x = date, y = 0, xend = date, yend = y)) +
   geom_line(data = df, aes(x = date, y = grad1, color = "Exponential")) +
   geom_line(data = df, aes(x = date, y = grad2, color = "Logistic")) +
   geom_line(data = df, aes(x = date, y = grad3, color = "Gompertz")) +
@@ -334,13 +335,13 @@ df = data.frame(x = seq(min(data$x), max(data$x)+14))
 df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1))
 
 pred1 = cbind(df, "fit" = predict(mod1, newdata = df))
-pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])
+pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])[,2:3]
 
 pred2 = cbind(df, "fit" = predict(mod2, newdata = df))
-pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])
+pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])[,2:3]
 
 pred3 = cbind(df, "fit" = predict(mod3, newdata = df))
-pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
+pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])[,2:3]
 
 # predictions for next day
 pred = rbind(subset(pred1, x == max(data$x)+1, select = 2:5),
@@ -495,7 +496,7 @@ df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1),
 ylim = c(0, max(df[,-(1:3)]))
 ```
 
-```{R, echo=-2, out.width="100%"}
+```{R, out.width="100%"}
 ggplot(data, aes(x = date, y = y)) + 
   geom_point() +
   geom_line(data = df, aes(x = date, y = fit1, color = "Exponential")) +
@@ -523,14 +524,15 @@ df = cbind(df,
            "grad2" = logisticGrad(mod2, df$x),
            "grad3" = gompertzGrad(mod3, df$x))
            # "grad4" = richardsGrad(mod4, df$x))
-peak = c(which(peaks(df$grad2)), which(peaks(df$grad3)), which(peaks(df$grad4)))
+peak = c(which(peaks(df$grad2)), which(peaks(df$grad3)))
 
 ggplot(df, aes(x = date, y = y)) + 
   geom_point() +
+  geom_segment(aes(x = date, y = 0, xend = date, yend = y)) +
   geom_line(data = df, aes(x = date, y = grad1, color = "Exponential")) +
   geom_line(data = df, aes(x = date, y = grad2, color = "Logistic")) +
   geom_line(data = df, aes(x = date, y = grad3, color = "Gompertz")) +
-  geom_line(data = df, aes(x = date, y = grad4, color = "Richards")) +
+  # geom_line(data = df, aes(x = date, y = grad4, color = "Richards")) +
   geom_vline(data = df[peak,], aes(xintercept = date), lty = 2) +
   coord_cartesian(ylim = range(df$grad2, df$grad3, df$grad4)) +
   labs(x = "", y = expression(paste(Delta, "Deceased")), color = "Model") +
@@ -541,9 +543,9 @@ ggplot(df, aes(x = date, y = y)) +
   annotate(geom = "text", x = df[peak[2],"date"], y = df[peak[2],"grad3"],
            label = df[peak[2],"date"], col = cols[3],
            hjust = -0.1, vjust = -0.1) +
-  annotate(geom = "text", x = df[peak[3],"date"], y = df[peak[3],"grad4"],
-           label = df[peak[3],"date"], col = cols[4],
-           hjust = -0.1, vjust = -0.1) +
+  # annotate(geom = "text", x = df[peak[3],"date"], y = df[peak[3],"grad4"],
+  #          label = df[peak[3],"date"], col = cols[4],
+  #          hjust = -0.1, vjust = -0.1) +
   theme_bw() +
   theme(legend.position = "top")
 ```
@@ -557,13 +559,13 @@ df = data.frame(x = seq(min(data$x), max(data$x)+14))
 df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1))
 
 pred1 = cbind(df, "fit" = predict(mod1, newdata = df), "lwr" = NA, "upr" = NA)
-pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])
+pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])[,2:3]
 
 pred2 = cbind(df, "fit" = predict(mod2, newdata = df), "lwr" = NA, "upr" = NA)
-pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])
+pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])[,2:3]
 
 pred3 = cbind(df, "fit" = predict(mod3, newdata = df), "lwr" = NA, "upr" = NA)
-pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
+pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])[,2:3]
 
 # pred4 = cbind(df, "fit" = predict(mod4, newdata = df), "lwr" = NA, "upr" = NA)
 # pred4[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod4, df[df$x > max(data$x),])
@@ -716,9 +718,9 @@ df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1),
 ylim = c(0, max(df[,-(1:3)]))
 ```
 
-```{R, echo=-2, out.width="100%"}
+```{R, out.width="100%"}
 ggplot(data, aes(x = date, y = y)) + 
-  geom_point() +
+  geom_point() + 
   geom_line(data = df, aes(x = date, y = fit1, color = "Exponential")) +
   geom_line(data = df, aes(x = date, y = fit2, color = "Logistic")) +
   geom_line(data = df, aes(x = date, y = fit3, color = "Gompertz")) +
@@ -747,12 +749,13 @@ peak = c(which(peaks(df$grad2)), which(peaks(df$grad3)))
 
 ggplot(df, aes(x = date, y = y)) + 
   geom_point() +
+  geom_segment(aes(x = date, y = 0, xend = date, yend = y)) +
   geom_line(data = df, aes(x = date, y = grad1, color = "Exponential")) +
   geom_line(data = df, aes(x = date, y = grad2, color = "Logistic")) +
   geom_line(data = df, aes(x = date, y = grad3, color = "Gompertz")) +
   geom_vline(data = df[peak,], aes(xintercept = date), 
              lty = 2, col = cols[2]) +
-  coord_cartesian(ylim = range(df$grad2)*c(0,10)) +
+  coord_cartesian(ylim = c(0,range(df$grad2[peak],df$grad3[peak]))) +
   labs(x = "", y = expression(paste(Delta, "Recovered")), color = "Model") +
   scale_color_manual(values = cols) +
   annotate(geom = "text", x = df[peak[1],"date"], y = df[peak[1],"grad2"],
@@ -773,13 +776,13 @@ df = data.frame(x = seq(min(data$x), max(data$x)+14))
 df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1))
 
 pred1 = cbind(df, "fit" = predict(mod1, newdata = df), "lwr" = NA, "upr" = NA)
-pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])
+pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])[,2:3]
 
 pred2 = cbind(df, "fit" = predict(mod2, newdata = df), "lwr" = NA, "upr" = NA)
-pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])
+pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])[,2:3]
 
 pred3 = cbind(df, "fit" = predict(mod3, newdata = df), "lwr" = NA, "upr" = NA)
-pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])
+pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])[,2:3]
 
 # predictions for next day
 pred = rbind(subset(pred1, x == max(data$x)+1, select = 2:5),
