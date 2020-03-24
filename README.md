@@ -33,3 +33,7 @@ Below a brief summary for Italy for total infected, total deceased and recovered
 
 <img src="COVID-19-IT_recovered_plot.png" alt="graph" width="80%"/>
 
+## Dashboard
+
+https://achab94.shinyapps.io/covid-19/
+
