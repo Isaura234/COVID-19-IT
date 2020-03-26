@@ -76,7 +76,7 @@ richardsGrad <- function(object, x, ...)
 }
 
 cols <- c("Exponential" = "red3", "Logistic" = "dodgerblue3",
-          "Gompertz" = "azure4", "Richards" = "forestgreen")
+          "Gompertz" = "forestgreen", "Richards" = "azure4")
 
 tab_theme <- ttheme_default(
   core = list(# bg_params = list(fill = NA, col=NA),
@@ -304,7 +304,7 @@ df = cbind(df,
            "grad1" = exponentialGrad(mod1, df$x),
            "grad2" = logisticGrad(mod2, df$x),
            "grad3" = gompertzGrad(mod3, df$x))
-peak = c(which(peaks(df$grad2)), which(peaks(df$grad3)))
+peak = c(which(peaks(df$grad2))[1], which(peaks(df$grad3))[1])
 
 ggplot(df, aes(x = date, y = y)) + 
   geom_point(size = 1) +
