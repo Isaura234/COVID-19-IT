@@ -10,35 +10,8 @@ output:
 
 <br><br>
 
-```{r setup, include=FALSE}
-library(knitr)
-opts_chunk$set(fig.align = "center",
-               fig.width = 6, fig.height = 5.5,
-               dev.args = list(pointsize=10),
-               out.width = "90%", dpi = 300,
-               cache = FALSE,
-               par = TRUE, # needed for setting hook 
-               collapse = TRUE, # collapse input & ouput code in chunks
-               warning = FALSE, message = FALSE)
-
-library(ggplot2)
-library(gridExtra)
-source("misc/predictMBBnls.R")  # experimental
-
-logpos <- function(x) ifelse(x > 0, log(x), 1)
-
-AICc <- function(object, ..., k = 2) 
-{
-  n      <- nobs(object)
-  loglik <- logLik(object)
-  df     <- attr(loglik, "df")
-  AIC <- -2 * c(loglik) + k * df
-  AICc <- AIC + k * df * (df +1)/(n - df - 1)
-  return(AICc)
-}
-
-cols <- c("Exponential" = "red3", "Logistic" = "dodgerblue3",
-          "Gompertz" = "forestgreen", "Richards" = "azure4")
+```{r setup, echo=FALSE}
+source("setup.R")
 ```
 
 # Data 
@@ -62,6 +35,7 @@ COVID19 <- subset(COVID19, denominazione_regione == "Umbria")
 # create data for analysis
 data = data.frame(date = COVID19$data,
                   y = COVID19$totale_casi)
+data = subset(data, y > 0)
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data, options = list("pageLength" = 5))
 ```
@@ -89,15 +63,15 @@ summary(mod2)
 ### Gompertz
 
 ```{R}
-# mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data,
-#            control = nls.control(maxiter = 10000))
-# start = list(Asym = coef(mod2)[1])
-start = list(Asym = max(data$y)*100)
-tmp = data.frame(y = log(log(start$Asym) - log(data$y)), x = data$x)
-b = unname(coef(lm(y ~ x, data = tmp[is.finite(tmp$y),])))
-start = c(start, c(b2 = exp(b[1]), b3 = exp(b[2])))
-mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data, start = start, 
+mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data,
            control = nls.control(maxiter = 10000))
+# start = list(Asym = coef(mod2)[1])
+# start = list(Asym = max(data$y)*100)
+# tmp = data.frame(y = log(log(start$Asym) - log(data$y)), x = data$x)
+# b = unname(coef(lm(y ~ x, data = tmp[is.finite(tmp$y),])))
+# start = c(start, c(b2 = exp(b[1]), b3 = exp(b[2])))
+# mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data, start = start, 
+#            control = nls.control(maxiter = 10000))
 summary(mod3)
 ```
 
