@@ -756,5 +756,43 @@ ggplot(data, aes(x = date, y = y)) +
 ggsave(file = "COVID-19-IT_recovered_plot.png", width = 7, height = 6, dpi = 300)
 ```
 
+# Evolution of new positive cases and administered swabs
+                                                              
+```{r, out.width="100%"}
+df = data.frame(date = COVID19IT$data,
+                swabs = c(NA, diff(COVID19IT$tamponi)),
+                positives = COVID19IT$nuovi_attualmente_positivi)
+df$x = as.numeric(df$date) - min(as.numeric(df$date)) + 1
+df$r = df$positives/df$swabs
+df = subset(df, swabs > 50)
+
+graph1 <- ggplot(df, aes(x = date)) + 
+  geom_point(aes(y = swabs, color = "swabs"), pch = 19) +
+  geom_line(aes(y = swabs, color = "swabs")) +
+  geom_point(aes(y = positives, color = "positives"), pch = 15) +
+  geom_line(aes(y = positives, color = "positives")) +
+  labs(x = "", y = "Number of cases", color = "") +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  scale_color_manual(values = palette()[c(2,1)]) +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+
+graph2 <- ggplot(df, aes(x = date, y = r)) + 
+  geom_smooth(method = "loess", se = TRUE, col = "darkgrey") +
+  geom_point(col=palette()[4]) + 
+  geom_line(size = 0.5, col=palette()[4]) +
+  labs(x = "", y = "New positives / swabs") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+
+grid.arrange(graph1, graph2, nrow = 2, ncol = 1, widths = 1, heights = c(0.6,0.4))
+```
+
 
 
