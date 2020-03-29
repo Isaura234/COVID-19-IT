@@ -73,6 +73,7 @@ DT::datatable(COVID19IT)
 
 Warnings
 ```
+- 29/03/2020: dati Regione Emilia Romagna parziali (dato tampone non aggiornato).
 - 26/03/2020: dati Regione Piemonte parziali (-50 deceduti - comunicazione tardiva)
 - 18/03/2020: dati Regione Campania non pervenuti.
 - 18/03/2020: dati Provincia di Parma non pervenuti.
@@ -102,7 +103,7 @@ DT::datatable(data, options = list("pageLength" = 5))
 ```{R}
 mod1_start = lm(log(y) ~ x, data = data)
 b = unname(coef(mod1_start))
-start = list(th1 = log(b[1]), th2 = b[2])
+start = list(th1 = exp(b[1]), th2 = b[2])
 exponential <- function(x, th1, th2) th1 * exp(th2 * x)
 mod1 = nls(y ~ exponential(x, th1, th2), data = data, start = start)
 summary(mod1)
@@ -174,7 +175,6 @@ ggsave(grid.arrange(tab),
        width = 6, height = 1.3, dpi = 300)
 ```
 
-
 ```{R, out.width="100%"}
 ggplot(data, aes(x = date, y = y)) + 
   geom_point() +
@@ -190,6 +190,12 @@ ggplot(data, aes(x = date, y = y)) +
                minor_breaks = "1 day") +
   theme_bw() +
   theme(legend.position = "top")
+```
+
+```{R, out.width="100%"}
+last_plot() +
+  scale_y_continuous(trans = "log10", limits = c(100,NA)) +
+  labs(y = "Infected (log10 scale)")
 ```
 
 ## Predictions
@@ -233,7 +239,7 @@ df = cbind(df,
            "grad1" = exponentialGrad(mod1, df$x),
            "grad2" = logisticGrad(mod2, df$x),
            "grad3" = gompertzGrad(mod3, df$x))
-peak = c(which(peaks(df$grad2))[1], which(peaks(df$grad3))[1])
+(peak = c(which(peaks(df$grad2))[1], which(peaks(df$grad3))[1]))
 
 ggplot(df, aes(x = date, y = y)) + 
   geom_point(size = 1) +
@@ -243,7 +249,7 @@ ggplot(df, aes(x = date, y = y)) +
   geom_line(data = df, aes(x = date, y = grad3, color = "Gompertz")) +
   geom_vline(data = df[peak,], aes(xintercept = date), 
              lty = 2, col = cols[2:3]) +
-  coord_cartesian(ylim = range(df$grad2, df$grad3)) +
+  coord_cartesian(ylim = range(df$y, df$grad2, df$grad3, na.rm = TRUE)) +
   labs(x = "", y = expression(paste(Delta, "Infected")), color = "Model") +
   scale_color_manual(values = cols) +
   annotate(geom = "text", x = df[peak[1],"date"], y = df[peak[1],"grad2"],
@@ -254,7 +260,23 @@ ggplot(df, aes(x = date, y = y)) +
            hjust = -0.1, vjust = -0.1) +
   theme_bw() +
   theme(legend.position = "top")
+
+# calibration based
+source("misc/calibrate_nls.R")
+calibrate.nls(mod2, coef(mod2)[1]/2, lwr = 0, upr = max(df$x))
+calibrate.nls(mod3, coef(mod3)[1]/2, lwr = 0, upr = max(df$x))
+# coimpare with 
+peak
+
+cal2 = calibrateMBB.nls(mod2, coef(mod2)[1]/2, lwr = 0, upr = max(df$x))
+cal2
+as.Date(unlist(round(cal2)), origin = data$date[1]-1)
+
+cal3 = calibrateMBB.nls(mod3, coef(mod3)[1]/2, lwr = 0, upr = max(df$x))
+cal3
+as.Date(unlist(round(cal3)), origin = data$date[1]-1)
 ```
+
 
 ### Prediction intervals
 
@@ -329,7 +351,7 @@ DT::datatable(data, options = list("pageLength" = 5))
 ```{R}
 mod1_start = lm(log(y) ~ x, data = data)
 b = unname(coef(mod1_start))
-start = list(th1 = log(b[1]), th2 = b[2])
+start = list(th1 = exp(b[1]), th2 = b[2])
 exponential <- function(x, th1, th2) th1 * exp(th2 * x)
 mod1 = nls(y ~ exponential(x, th1, th2), data = data, start = start)
 summary(mod1)
@@ -413,6 +435,12 @@ ggplot(data, aes(x = date, y = y)) +
                minor_breaks = "1 day") +
   theme_bw() +
   theme(legend.position = "top")
+```
+
+```{R, out.width="100%"}
+last_plot() +
+  scale_y_continuous(trans = "log10", limits = c(10,NA)) +
+  labs(y = "Deceased (log10 scale)")
 ```
 
 ## Predictions
@@ -557,7 +585,7 @@ DT::datatable(data, options = list("pageLength" = 5))
 ```{R}
 mod1_start = lm(log(y) ~ x, data = data)
 b = unname(coef(mod1_start))
-start = list(th1 = log(b[1]), th2 = b[2])
+start = list(th1 = exp(b[1]), th2 = b[2])
 exponential <- function(x, th1, th2) th1 * exp(th2 * x)
 mod1 = nls(y ~ exponential(x, th1, th2), data = data, start = start)
 summary(mod1)
@@ -633,6 +661,12 @@ ggplot(data, aes(x = date, y = y)) +
                minor_breaks = "1 day") +
   theme_bw() +
   theme(legend.position = "top")
+```
+
+```{R, out.width="100%"}
+last_plot() +
+  scale_y_continuous(trans = "log10", limits = c(10,NA)) +
+  labs(y = "Recovered (log10 scale)")
 ```
 
 ## Predictions

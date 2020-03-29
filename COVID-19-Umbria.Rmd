@@ -47,7 +47,7 @@ DT::datatable(data, options = list("pageLength" = 5))
 ```{R}
 mod1_start = lm(log(y+1) ~ x, data = data)
 b = unname(coef(mod1_start))
-start = list(th1 =  logpos(b[1]), th2 = b[2])
+start = list(th1 = exp(b[1]), th2 = b[2])
 exponential <- function(x, th1, th2) th1 * exp(th2 * x)
 mod1 = nls(y ~ exponential(x, th1, th2), data = data, start = start)
 summary(mod1)
@@ -124,6 +124,12 @@ ggplot(data, aes(x = date, y = y)) +
                minor_breaks = "1 day") +
   theme_bw() +
   theme(legend.position = "top")
+```
+
+```{R, out.width="100%"}
+last_plot() +
+  scale_y_continuous(trans = "log10", limits = c(10,NA)) +
+  labs(y = "Recovered (log10 scale)")
 ```
 
 ## Predictions
