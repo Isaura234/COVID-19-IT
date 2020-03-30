@@ -795,7 +795,7 @@ ggsave(file = "COVID-19-IT_recovered_plot.png", width = 7, height = 6, dpi = 300
 ```{r, out.width="100%"}
 df = data.frame(date = COVID19IT$data,
                 swabs = c(NA, diff(COVID19IT$tamponi)),
-                positives = COVID19IT$nuovi_attualmente_positivi)
+                positives = c(NA, diff(COVID19IT$totale_casi)))
 df$x = as.numeric(df$date) - min(as.numeric(df$date)) + 1
 df$r = df$positives/df$swabs
 df = subset(df, swabs > 50)
