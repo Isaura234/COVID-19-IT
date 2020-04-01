@@ -1,0 +1,22 @@
+nelle ultime due settimane tanti colleghi e colleghe appartenenti a varie discipline scientifiche si sono cimentati nell'analisi dei dati forniti dalla protezione civile
+
+dobbiamo subito dire che tale fonte di dati è di estrema importanza e rilevanza. 
+Purtroppo fornisce solo un'approssimazione della realtà e da più parti sono state messe in evidenza le carenze e i limiti dei dati attualmente disponibili. 
+Tuttavia, anche se i valori assoluti non sono affidabili al 100%, se il criterio di raccolta dati rimane invariato tali dati possono essere usati per monitorare l'andamento relativo dell'epidemia COVID-19
+
+venendo alle analisi statistiche che ho condotto, mi sono inizialmente occupato di studiare l'evoluzione temporale del numero totale degli infetti, il quale include il numero dei positivi, dei guariti, e dei deceduti.
+
+quindi, ho stimato delle curve di crescita per il totale degli infetti tramite modelli statistici non-lineari. 
+
+i risultati delle analisi, in particolare quelli riguardanti l'Umbria, sono stati discussi con la Dott.ssa Carla Bietta del Servizio Epidemiologia - Dipartimento di Prevenzione - USL1 dell'Umbria.
+inoltre, tutti i risultati e il codice con il quale sono stati ottenuti sono liberamente disponibili on-line in un repository GitHub
+
+slides 
+
+ITALIA
+modello logistico prevede un numero totale di infetti 130 mila (asintoto)
+modello Gompertz prevede un numero totale di infetti 225 mila (asintoto)
+
+UMBRIA
+modello logistico prevede un numero totale di infetti 1300 (asintoto)
+modello Gompertz prevede un numero totale di infetti 1800 mila (asintoto)

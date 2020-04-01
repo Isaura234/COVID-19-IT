@@ -1,0 +1,80 @@
+---
+title: "Commento all'articolo Umbria24 'Virologo Crisanti all’Umbria: Occhio ai contagi in quarantena, avete fatto troppi pochi test'"
+subtitle: ""
+author: "Luca Scrucca"
+institute: "Università degli Studi di Perugia"
+date: "`r format(Sys.time(), '%d %b %Y')`"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+---
+
+
+```{r setup, echo=FALSE}
+options(htmltools.dir.version = FALSE)
+source("../setup.R", chdir = TRUE)
+# pagedown::chrome_print("Crisanti.Rmd")
+```
+
+Virologo Crisanti all’Umbria: «Occhio ai contagi in quarantena, avete fatto troppi pochi test»
+
+http://www.umbria24.it/attualita/virologo-crisanti-allumbria-occhio-ai-contagi-in-quarantena-avete-fatto-troppi-pochi-test
+
+```{R, echo=FALSE}
+url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv"
+COVID19IT <- read.csv(file = url, stringsAsFactors = FALSE)
+COVID19IT$data <- as.Date(COVID19IT$data)
+dataIT = data.frame(date = COVID19IT$data,
+                    x    = as.numeric(COVID19IT$data) - min(as.numeric(COVID19IT$data)) + 1,
+                    tamponi = COVID19IT$tamponi)
+dataIT = subset(dataIT, tamponi > 50)
+
+url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv"
+COVID19U <- read.csv(file = url, stringsAsFactors = FALSE)
+COVID19U$data <- as.Date(COVID19U$data)
+COVID19U <- subset(COVID19U, denominazione_regione == "Umbria")
+dataU = data.frame(date = COVID19U$data,
+                   x    = as.numeric(COVID19U$data) - min(as.numeric(COVID19U$data)) + 1,
+                   tamponi = COVID19U$tamponi)
+dataU = subset(dataU, tamponi > 50)
+
+url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv"
+COVID19V <- read.csv(file = url, stringsAsFactors = FALSE)
+COVID19V$data <- as.Date(COVID19V$data)
+COVID19V <- subset(COVID19V, denominazione_regione == "Veneto")
+dataV = data.frame(date = COVID19V$data,
+                   x    = as.numeric(COVID19V$data) - min(as.numeric(COVID19V$data)) + 1,
+                   tamponi = COVID19V$tamponi)
+dataV = subset(dataV, tamponi > 50)
+
+url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv"
+COVID19L <- read.csv(file = url, stringsAsFactors = FALSE)
+COVID19L$data <- as.Date(COVID19L$data)
+COVID19L <- subset(COVID19L, denominazione_regione == "Lombardia")
+dataL = data.frame(date = COVID19L$data,
+                   x    = as.numeric(COVID19L$data) - min(as.numeric(COVID19L$data)) + 1,
+                   tamponi = COVID19L$tamponi)
+dataL = subset(dataL, tamponi > 50)
+
+# popolazione al 1° gennaio 2019
+PopIT = 60391 # migliaia
+PopU  =   882 # migliaia
+PopV  =  4906 # migliaia
+PopL  = 10061 # migliaia
+
+plot(dataIT$date, dataIT$tamponi/PopIT, type = "o", col = 1, pch = 19,
+     panel.first = grid(), ylim = c(0,25),
+     ylab = "Tamponi per 1000 abitanti", xlab = "")
+lines(dataL$date, dataL$tamponi/PopL, type = "o", col = 2, pch = 17)
+lines(dataV$date, dataV$tamponi/PopV, type = "o", col = 4, pch = 8)
+lines(dataU$date, dataU$tamponi/PopU, type = "o", col = 3, pch = 15)
+legend("top", col = c(1,2,4,3), pch = c(19, 17, 8, 15), lty = rep(1,4),
+       legend = c("Italia", "Lombardia", "Veneto", "Umbria"), 
+       ncol = 4, inset = 0.02, bty = "n")
+# dev.copy2pdf(file = "tamponi_it_vs_umbria.pdf", width = 10, height = 8)
+```
+

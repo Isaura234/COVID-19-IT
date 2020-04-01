@@ -64,6 +64,7 @@ ggplot(data, aes(x = date, y = y)) +
   theme_bw() +
   theme(legend.position = "bottom",  
         axis.text.x = element_text(angle=60, hjust=1))
+# ggsave("figura1.jpg", width = 8, height = 7)
 ```
 
 ---
@@ -115,6 +116,7 @@ ggplot(data, aes(x = date, y = y)) +
   theme_bw() +
   theme(legend.position = "bottom",  
         axis.text.x = element_text(angle=60, hjust=1))
+# ggsave("figura2.jpg", width = 8, height = 7)
 ```
 
 ---
@@ -226,6 +228,7 @@ ggplot(data, aes(x = date, y = r, group = type, col = type)) +
   theme_bw() +
   theme(legend.position = "bottom", legend.title = element_blank(),
         axis.text.x = element_text(angle=60, hjust=1))
+# ggsave("figura3.jpg", width = 8, height = 7)
 ```
 
 
@@ -270,3 +273,10 @@ class: center, middle
 knitr::include_graphics("deceduti_nembro.jpg")
 ```
 
+```{r, echo=FALSE, eval=FALSE}
+r = diff(COVID19U$tamponi)/diff(COVID19IT$tamponi)
+plot(r, type = "b")
+x = diff(COVID19IT$tamponi)/60*0.9
+matplot(cbind(x, diff(COVID19U$tamponi)), 
+        type = "b", lty = 1, pch = c(1,19), col = c(4,3))
+```
