@@ -66,9 +66,9 @@ Source: https://github.com/pcm-dpc/COVID-19
 
 ```{R}
 url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-andamento-nazionale/dpc-covid19-ita-andamento-nazionale.csv"
-COVID19IT <- read.csv(file = url, stringsAsFactors = FALSE)
-COVID19IT$data <- as.Date(COVID19IT$data)
-DT::datatable(COVID19IT)
+COVID19 <- read.csv(file = url, stringsAsFactors = FALSE)
+COVID19$data <- as.Date(COVID19$data)
+DT::datatable(COVID19)
 ```
 
 Warnings
@@ -90,8 +90,8 @@ Warnings
 
 ```{R}
 # create data for analysis
-data = data.frame(date = COVID19IT$data,
-                  y = COVID19IT$totale_casi)
+data = data.frame(date = COVID19$data,
+                  y = COVID19$totale_casi)
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data, options = list("pageLength" = 5))
 ```
@@ -338,8 +338,8 @@ ggsave(file = "COVID-19-IT_infected_plot.png", width = 7, height = 6, dpi = 300)
 
 ```{R}
 # create data for analysis
-data = data.frame(date = COVID19IT$data,
-                  y = COVID19IT$deceduti)
+data = data.frame(date = COVID19$data,
+                  y = COVID19$deceduti)
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data, options = list("pageLength" = 5))
 ```
@@ -572,8 +572,8 @@ ggsave(file = "COVID-19-IT_deceased_plot.png", width = 7, height = 6, dpi = 300)
 
 ```{R}
 # create data for analysis
-data = data.frame(date = COVID19IT$data,
-                  y = COVID19IT$dimessi_guariti)
+data = data.frame(date = COVID19$data,
+                  y = COVID19$dimessi_guariti)
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data, options = list("pageLength" = 5))
 ```
@@ -790,20 +790,25 @@ ggplot(data, aes(x = date, y = y)) +
 ggsave(file = "COVID-19-IT_recovered_plot.png", width = 7, height = 6, dpi = 300)
 ```
 
-# Evolution of new positive cases and administered swabs
-                                                              
-```{r, out.width="100%"}
-df = data.frame(date = COVID19IT$data,
-                swabs = c(NA, diff(COVID19IT$tamponi)),
-                positives = c(NA, diff(COVID19IT$totale_casi)))
-df$x = as.numeric(df$date) - min(as.numeric(df$date)) + 1
-df$r = df$positives/df$swabs
-df = subset(df, swabs > 50)
+# Evolution of positive cases and administered swabs
 
-graph1 <- ggplot(df, aes(x = date)) + 
+```{R}
+df = data.frame(date = COVID19$data,
+                positives = c(NA, diff(COVID19$totale_casi)),
+                swabs = c(NA, diff(COVID19$tamponi)))
+df$x = as.numeric(df$date) - min(as.numeric(df$date)) + 1
+df$y = df$positives/df$swabs
+df = subset(df, swabs > 50)
+DT::datatable(df[,-4], )
+```
+
+<br>
+
+```{R}
+ggplot(df, aes(x = date)) + 
   geom_point(aes(y = swabs, color = "swabs"), pch = 19) +
   geom_line(aes(y = swabs, color = "swabs")) +
-  geom_point(aes(y = positives, color = "positives"), pch = 15) +
+  geom_point(aes(y = positives, color = "positives"), pch = 0) +
   geom_line(aes(y = positives, color = "positives")) +
   labs(x = "", y = "Number of cases", color = "") +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
@@ -812,20 +817,20 @@ graph1 <- ggplot(df, aes(x = date)) +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
+```
 
-graph2 <- ggplot(df, aes(x = date, y = r)) + 
+```{R}
+ggplot(df, aes(x = date, y = y)) + 
   geom_smooth(method = "loess", se = TRUE, col = "darkgrey") +
   geom_point(col=palette()[4]) + 
   geom_line(size = 0.5, col=palette()[4]) +
-  labs(x = "", y = "New positives / swabs") +
+  labs(x = "", y = "Positives / Admnistered swabs") +
   scale_y_continuous(labels = scales::percent_format()) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   theme_bw() +
   theme(legend.position = "top",
         axis.text.x = element_text(angle=60, hjust=1))
-
-grid.arrange(graph1, graph2, nrow = 2, ncol = 1, widths = 1, heights = c(0.6,0.4))
 ```
 
 
