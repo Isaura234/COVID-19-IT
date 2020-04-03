@@ -16,7 +16,7 @@ source("setup.R")
 
 # Data 
 
-Dipartimento della Protezione Civile: COVID-19 Italia - Monitoraggio della situazione <http://arcg.is/C1unv>
+Dipartimento della Protezione Civile: COVID-19 Italia - Monitoraggio della situazione http://arcg.is/C1unv
 
 Source: https://github.com/pcm-dpc/COVID-19 
 

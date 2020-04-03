@@ -1,0 +1,293 @@
+---
+title: "Statistical Modelling of COVID-19 Outbreak in Umbria"
+date: "`r format(Sys.time(), '%d %b %Y')`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: false
+    css: "COVID-19-IT.css"
+---
+
+<br><br>
+
+```{R setup, echo=FALSE}
+source("setup.R")
+```
+
+# Data 
+
+Dipartimento della Protezione Civile: COVID-19 Italia - Monitoraggio della situazione <http://arcg.is/C1unv>
+
+Source: https://github.com/pcm-dpc/COVID-19 
+
+```{R}
+url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv"
+COVID19 <- read.csv(file = url, stringsAsFactors = FALSE)
+COVID19$data <- as.Date(COVID19$data)
+COVID19 <- subset(COVID19, denominazione_regione == "Umbria")
+```
+
+<br>
+
+# Modelling total infected 
+
+```{R}
+# create data for analysis
+data = data.frame(date = COVID19$data,
+                  y = COVID19$totale_casi,
+                  w = COVID19$totale_casi/mean(COVID19$totale_casi))
+data = subset(data, y > 0)
+data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
+DT::datatable(data, options = list("pageLength" = 5))
+```
+
+## Estimation
+
+### Exponential
+
+```{R}
+mod1_start = lm(log(y+1) ~ x, data = data)
+b = unname(coef(mod1_start))
+start = list(th1 = exp(b[1]), th2 = b[2])
+exponential <- function(x, th1, th2) th1 * exp(th2 * x)
+mod1 = nls(y ~ exponential(x, th1, th2), weights = w, data = data, start = start)
+summary(mod1)
+```
+
+### Logistic
+
+```{R}
+mod2 = nls(y ~ SSlogis(x, Asym, xmid, scal), weights = w, data = data)
+summary(mod2)
+```
+
+### Gompertz
+
+```{R}
+mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), weights = w, data = data,
+           control = nls.control(maxiter = 10000))
+# start = list(Asym = coef(mod2)[1])
+# start = list(Asym = max(data$y)*100)
+# tmp = data.frame(y = log(log(start$Asym) - log(data$y)), x = data$x)
+# b = unname(coef(lm(y ~ x, data = tmp[is.finite(tmp$y),])))
+# start = c(start, c(b2 = exp(b[1]), b3 = exp(b[2])))
+# mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data, start = start, 
+#            control = nls.control(maxiter = 10000))
+summary(mod3)
+```
+
+### Richards
+
+```{R}
+richards <- function(x, th1, th2, th3) th1*(1 - exp(-th2*x))^th3
+Loss  <- function(th, y, x) sum((y - richards(x, th[1], th[2], th[3]))^2) 
+start <- optim(par = c(coef(mod2)[1], 0.001, 1), fn = Loss, 
+               y = data$y, x = data$x)$par
+names(start) <- c("th1", "th2", "th3")
+mod4 = nls(y ~ richards(x, th1, th2, th3), weights = w, 
+           data = data, start = start,
+           # trace = TRUE, # algorithm = "port", 
+           control = nls.control(maxiter = 1000))
+summary(mod4)
+```
+
+### Models comparison
+
+```{R}
+models = list("Exponential model" = mod1, 
+              "Logistic model" = mod2,
+              "Gompertz model" = mod3,
+              "Richards model" = mod4)
+tab = data.frame(loglik = sapply(models, logLik),
+                 df = sapply(models, function(m) attr(logLik(m), "df")),
+                 Rsquare = sapply(models, function(m) 
+                                  cor(data$y, fitted(m))^2),
+                 AIC = sapply(models, AIC),
+                 AICc = sapply(models, AICc),
+                 BIC = sapply(models, BIC))
+sel <- apply(tab[,4:6], 2, which.min)
+tab$"" <- sapply(tabulate(sel, nbins = length(models))+1, symnum,
+                 cutpoints = 0:4, symbols = c("", "*", "**", "***"))
+knitr::kable(tab)
+```
+
+```{R, out.width="100%"}
+ggplot(data, aes(x = date, y = y)) + 
+  geom_point(aes(size = w)) +
+  geom_line(aes(y = fitted(mod1), color = "Exponential")) +
+  geom_line(aes(y = fitted(mod2), color = "Logistic")) +
+  geom_line(aes(y = fitted(mod3), color = "Gompertz")) +
+  geom_line(aes(y = fitted(mod4), color = "Richards")) +
+  labs(x = "", y = "Infected", color = "Model") +
+  scale_color_manual(values = cols) +
+  scale_y_continuous(breaks = seq(0, coef(mod2)[1], by = 50),
+                     minor_breaks = seq(0, coef(mod2)[1], by = 10)) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+```{R, out.width="100%"}
+last_plot() +
+  scale_y_continuous(trans = "log10", limits = c(10,NA)) +
+  labs(y = "Recovered (log10 scale)")
+```
+
+## Predictions
+
+### Point estimates
+
+```{R}
+df = data.frame(x = seq(min(data$x), max(data$x)+14))
+df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1),
+               fit1 = predict(mod1, newdata = df),
+               fit2 = predict(mod2, newdata = df),
+               fit3 = predict(mod3, newdata = df),
+               fit4 = predict(mod4, newdata = df))
+ylim = c(0, max(df[,c("fit3")]))
+```
+
+```{R, echo=-2, out.width="100%"}
+ggplot(data, aes(x = date, y = y)) + 
+  geom_point() +
+  geom_line(data = df, aes(x = date, y = fit1, color = "Exponential")) +
+  geom_line(data = df, aes(x = date, y = fit2, color = "Logistic")) +
+  geom_line(data = df, aes(x = date, y = fit3, color = "Gompertz")) +
+  geom_line(data = df, aes(x = date, y = fit4, color = "Richards")) +
+  coord_cartesian(ylim = ylim) +
+  labs(x = "", y = "Infected", color = "Model") +
+  scale_y_continuous(breaks = seq(0, max(ylim), by = 500),
+                     minor_breaks = seq(0, max(ylim), by = 100)) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  scale_color_manual(values = cols) +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+```
+
+### Prediction intervals
+
+```{R}
+# compute prediction using Moving Block Bootstrap (MBB) for nls
+df = data.frame(x = seq(min(data$x), max(data$x)+14))
+df = cbind(df, date = as.Date(df$x, origin = data$date[1]-1))
+
+pred1 = cbind(df, "fit" = predict(mod1, newdata = df))
+pred1[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod1, df[df$x > max(data$x),])[,2:3]
+
+pred2 = cbind(df, "fit" = predict(mod2, newdata = df))
+pred2[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod2, df[df$x > max(data$x),])[,2:3]
+
+pred3 = cbind(df, "fit" = predict(mod3, newdata = df))
+pred3[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod3, df[df$x > max(data$x),])[,2:3]
+
+pred4 = cbind(df, "fit" = predict(mod4, newdata = df))
+pred4[df$x > max(data$x), c("lwr", "upr")] = predictMBB.nls(mod4, df[df$x > max(data$x),])[,2:3]
+
+# predictions for next day
+pred = rbind(subset(pred1, x == max(data$x)+1, select = 2:5),
+             subset(pred2, x == max(data$x)+1, select = 2:5),
+             subset(pred3, x == max(data$x)+1, select = 2:5),
+             subset(pred4, x == max(data$x)+1, select = 2:5))
+print(pred, digits = 3)
+
+ylim = c(0, max(pred2$upr, pred3$upr, na.rm=TRUE))
+```
+
+```{R, echo=-2, out.width="100%"}
+ggplot(data, aes(x = date, y = y)) + 
+  geom_point() +
+  geom_line(data = pred1, aes(x = date, y = fit, color = "Exponential")) +
+  geom_line(data = pred2, aes(x = date, y = fit, color = "Logistic")) +
+  geom_line(data = pred3, aes(x = date, y = fit, color = "Gompertz")) +
+  geom_line(data = pred4, aes(x = date, y = fit, color = "Richards")) +
+  geom_ribbon(data = pred1, aes(x = date, ymin = lwr, ymax = upr), 
+              inherit.aes = FALSE, fill = cols[1], alpha=0.3) +
+  geom_ribbon(data = pred2, aes(x = date, ymin = lwr, ymax = upr), 
+              inherit.aes = FALSE, fill = cols[2], alpha=0.3) +
+  geom_ribbon(data = pred3, aes(x = date, ymin = lwr, ymax = upr),
+              inherit.aes = FALSE, fill = cols[3], alpha=0.3) +
+  geom_ribbon(data = pred4, aes(x = date, ymin = lwr, ymax = upr),
+              inherit.aes = FALSE, fill = cols[4], alpha=0.3) +
+  coord_cartesian(ylim = c(0, max(ylim))) +
+  labs(x = "", y = "Infected", color = "Model") +
+  scale_y_continuous(breaks = seq(0, max(ylim), by = 500),
+                     minor_breaks = seq(0, max(ylim), by = 100)) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  scale_color_manual(values = cols) +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+```
+
+```{R, eval=FALSE, echo=FALSE}
+df = data.frame(x = seq(min(data$x), max(data$x)+90))
+df = cbind(df, 
+           "y" = c(NA, diff(data$y), rep(NA, nrow(df)-nrow(data))),
+           "date" = as.Date(df$x, origin = data$date[1]-1),
+           "grad1" = exponentialGrad(mod1, df$x),
+           "grad2" = logisticGrad(mod2, df$x))
+peak = which(peaks(df$grad2)) # which(peaks(df$grad3)))
+
+ggplot(df, aes(x = date, y = y)) + 
+  geom_point() +
+  geom_line(data = df, aes(x = date, y = grad1, color = "Exponential")) +
+  geom_line(data = df, aes(x = date, y = grad2, color = "Logistic")) +
+  geom_vline(data = df[peak,], aes(xintercept = date), lty = 2) +
+  coord_cartesian(ylim = range(df$grad2)) +
+  labs(x = "", y = expression(paste(Delta, "Infected")), color = "Model") +
+  scale_color_manual(values = cols) +
+  annotate(geom = "text", x = df[peak[1],"date"], y = df[peak[1],"grad2"],
+           label = df[peak[1],"date"], col = cols[2], 
+           hjust = -0.1, vjust = -0.1) +
+  theme_bw() +
+  theme(legend.position = "top")
+```
+
+
+# Evolution of positive cases and administered swabs
+
+```{R}
+df = data.frame(date = COVID19$data,
+                positives = c(NA, diff(COVID19$totale_casi)),
+                swabs = c(NA, diff(COVID19$tamponi)))
+df$x = as.numeric(df$date) - min(as.numeric(df$date)) + 1
+df$y = df$positives/df$swabs
+df = subset(df, swabs > 50)
+DT::datatable(df[,-4], )
+```
+
+<br>
+
+```{R}
+ggplot(df, aes(x = date)) + 
+  geom_point(aes(y = swabs, color = "swabs"), pch = 19) +
+  geom_line(aes(y = swabs, color = "swabs")) +
+  geom_point(aes(y = positives, color = "positives"), pch = 0) +
+  geom_line(aes(y = positives, color = "positives")) +
+  labs(x = "", y = "Number of cases", color = "") +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  scale_color_manual(values = palette()[c(2,1)]) +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+```
+
+```{R}
+ggplot(df, aes(x = date, y = y)) + 
+  geom_smooth(method = "loess", se = TRUE, col = "darkgrey") +
+  geom_point(col=palette()[4]) + 
+  geom_line(size = 0.5, col=palette()[4]) +
+  labs(x = "", y = "Positives / Admnistered swabs") +
+  scale_y_continuous(labels = scales::percent_format()) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+```
+

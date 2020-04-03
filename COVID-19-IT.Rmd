@@ -60,7 +60,7 @@ where $\theta_1$ is the horizontal asymptote, $\theta_2$ represents the rate of 
 
 # Data 
 
-Dipartimento della Protezione Civile: COVID-19 Italia - Monitoraggio della situazione <http://arcg.is/C1unv>
+Dipartimento della Protezione Civile: COVID-19 Italia - Monitoraggio della situazione http://arcg.is/C1unv
 
 Source: https://github.com/pcm-dpc/COVID-19 
 
