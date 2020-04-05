@@ -246,19 +246,20 @@ ggplot(df, aes(x = date, y = y)) +
 ```
 
 
-# Evolution of positive cases and administered swabs
+# Description of evolution
+
+## Positive cases and administered swabs
 
 ```{R}
 df = data.frame(date = COVID19$data,
                 positives = c(NA, diff(COVID19$totale_casi)),
                 swabs = c(NA, diff(COVID19$tamponi)))
 df$x = as.numeric(df$date) - min(as.numeric(df$date)) + 1
-df$y = df$positives/df$swabs
+# df$y = df$positives/df$swabs
+df$y = df$positives/c(NA, zoo::rollmean(df$swabs, 2))
 df = subset(df, swabs > 50)
-DT::datatable(df[,-4], )
+# DT::datatable(df[,-4], )
 ```
-
-<br>
 
 ```{R}
 ggplot(df, aes(x = date)) + 
@@ -277,11 +278,55 @@ ggplot(df, aes(x = date)) +
 
 ```{R}
 ggplot(df, aes(x = date, y = y)) + 
-  geom_smooth(method = "loess", se = TRUE, col = "darkgrey") +
+  geom_smooth(method = "loess", se = TRUE, col = "black") +
   geom_point(col=palette()[4]) + 
   geom_line(size = 0.5, col=palette()[4]) +
-  labs(x = "", y = "Positives / Admnistered swabs") +
-  scale_y_continuous(labels = scales::percent_format()) +
+  labs(x = "", y = "% positives among admnistered swabs (two-day rolling mean)") +
+  coord_cartesian(ylim = range(0,max(df$y, na.rm=TRUE))) +
+  scale_y_continuous(labels = scales::percent_format(),
+                     breaks = seq(0, 0.5, by = 0.05)) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+```
+
+
+## Hospitalized and ICU patients
+
+```{R}
+df = data.frame(date = COVID19$data,
+                hospital = c(NA, diff(COVID19$totale_ospedalizzati)),
+                icu = c(NA, diff(COVID19$terapia_intensiva)))
+df$x = as.numeric(df$date) - min(as.numeric(df$date)) + 1
+```
+
+```{R}
+ggplot(df, aes(x = date, y = hospital)) + 
+  geom_smooth(method = "loess", se = TRUE, col = "black") +
+  geom_point(col = "orange") + 
+  geom_line(size = 0.5, col = "orange") +
+  labs(x = "", y = "Change hospitalized patients") +
+  coord_cartesian(ylim = range(df$hospital, na.rm = TRUE)) +
+  scale_y_continuous(minor_breaks = seq(0, max(df$hospital, na.rm = TRUE), 
+                                        by = 100)) +
+  scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  theme_bw() +
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
+```
+
+```{R}
+ggplot(df, aes(x = date, y = icu)) + 
+  geom_smooth(method = "loess", se = TRUE, col = "black") +
+  geom_point(col = "red2") + 
+  geom_line(size = 0.5, col = "red2") +
+  labs(x = "", y = "Change ICU patients") +
+  coord_cartesian(ylim = range(df$icu, na.rm = TRUE)) +
+  scale_y_continuous(minor_breaks = seq(0, max(df$icu, na.rm = TRUE), 
+                                        by = 10)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   theme_bw() +
