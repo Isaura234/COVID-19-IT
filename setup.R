@@ -75,3 +75,5 @@ richardsGrad <- function(object, x, ...)
   f <- function(x) richards(x, th[1], th[2], th[3])
   numDeriv::grad(f, x)
 }
+
+reldiff <- function(x) x/lag(x)-1
