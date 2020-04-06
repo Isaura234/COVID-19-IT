@@ -119,7 +119,8 @@ ggplot(data, aes(x = date, y = y)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   theme_bw() +
-  theme(legend.position = "top")
+  theme(legend.position = "top",
+        axis.text.x = element_text(angle=60, hjust=1))
 ```
 
 ```{R, out.width="100%"}
