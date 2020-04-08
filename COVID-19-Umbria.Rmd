@@ -259,7 +259,7 @@ df$x = as.numeric(df$date) - min(as.numeric(df$date)) + 1
 # df$y = df$positives/df$swabs
 df$y = df$positives/c(NA, zoo::rollmean(df$swabs, 2))
 df = subset(df, swabs > 50)
-# DT::datatable(df[,-4], )
+knitr::kable(tail(df, n = 7), caption = "Data last week", row.names=FALSE)
 ```
 
 ```{R}
@@ -269,6 +269,8 @@ ggplot(df, aes(x = date)) +
   geom_point(aes(y = positives, color = "positives"), pch = 0) +
   geom_line(aes(y = positives, color = "positives")) +
   labs(x = "", y = "Number of cases", color = "") +
+  scale_y_continuous(breaks = seq(0, max(df$swabs, na.rm=TRUE), by = 200),
+	                   minor_breaks = seq(0, max(df$swabs, na.rm=TRUE), by = 100)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   scale_color_manual(values = palette()[c(2,1)]) +
@@ -285,7 +287,8 @@ ggplot(df, aes(x = date, y = y)) +
   labs(x = "", y = "% positives among admnistered swabs (two-day rolling mean)") +
   coord_cartesian(ylim = range(0,max(df$y, na.rm=TRUE))) +
   scale_y_continuous(labels = scales::percent_format(),
-                     breaks = seq(0, 0.5, by = 0.05)) +
+                     breaks = seq(0, 0.5, by = 0.05),
+										 minor_breaks = seq(0, 0.5, by = 0.01)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   theme_bw() +
@@ -301,6 +304,7 @@ df = data.frame(date = COVID19$data,
                 hospital = c(NA, diff(COVID19$totale_ospedalizzati)),
                 icu = c(NA, diff(COVID19$terapia_intensiva)))
 df$x = as.numeric(df$date) - min(as.numeric(df$date)) + 1
+knitr::kable(tail(df, n = 7), caption = "Data last week", row.names=FALSE)
 ```
 
 ```{R}
@@ -310,8 +314,10 @@ ggplot(df, aes(x = date, y = hospital)) +
   geom_line(size = 0.5, col = "orange") +
   labs(x = "", y = "Change hospitalized patients") +
   coord_cartesian(ylim = range(df$hospital, na.rm = TRUE)) +
-  scale_y_continuous(minor_breaks = seq(0, max(df$hospital, na.rm = TRUE), 
-                                        by = 100)) +
+  scale_y_continuous(breaks = seq(min(df$hospital, na.rm = TRUE), 
+	                                max(df$hospital, na.rm = TRUE), by = 5),
+										 minor_breaks = seq(min(df$hospital, na.rm = TRUE),
+										                    max(df$hospital, na.rm = TRUE), by = 1)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   theme_bw() +
@@ -326,8 +332,10 @@ ggplot(df, aes(x = date, y = icu)) +
   geom_line(size = 0.5, col = "red2") +
   labs(x = "", y = "Change ICU patients") +
   coord_cartesian(ylim = range(df$icu, na.rm = TRUE)) +
-  scale_y_continuous(minor_breaks = seq(0, max(df$icu, na.rm = TRUE), 
-                                        by = 10)) +
+  scale_y_continuous(breaks = seq(min(df$icu, na.rm = TRUE), 
+	                                max(df$icu, na.rm = TRUE), by = 5),
+										 minor_breaks = seq(min(df$icu, na.rm = TRUE),
+										                    max(df$icu, na.rm = TRUE), by = 1)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   theme_bw() +
