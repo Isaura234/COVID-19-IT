@@ -91,7 +91,8 @@ Warnings
 ```{R}
 # create data for analysis
 data = data.frame(date = COVID19$data,
-                  y = COVID19$totale_casi)
+                  y = COVID19$totale_casi,
+									dy = reldiff(COVID19$totale_casi))
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data, options = list("pageLength" = 5))
 ```
@@ -340,7 +341,8 @@ ggsave(file = "COVID-19-IT_infected_plot.png", width = 7, height = 6, dpi = 300)
 ```{R}
 # create data for analysis
 data = data.frame(date = COVID19$data,
-                  y = COVID19$deceduti)
+                  y = COVID19$deceduti,
+									dy = reldiff(COVID19$deceduti))
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data, options = list("pageLength" = 5))
 ```
@@ -575,7 +577,8 @@ ggsave(file = "COVID-19-IT_deceased_plot.png", width = 7, height = 6, dpi = 300)
 ```{R}
 # create data for analysis
 data = data.frame(date = COVID19$data,
-                  y = COVID19$dimessi_guariti)
+                  y = COVID19$dimessi_guariti,
+									dy = reldiff(COVID19$dimessi_guariti))
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data, options = list("pageLength" = 5))
 ```

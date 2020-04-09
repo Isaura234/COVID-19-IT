@@ -34,7 +34,8 @@ COVID19 <- subset(COVID19, denominazione_regione == "Lombardia")
 ```{R}
 # create data for analysis
 data = data.frame(date = COVID19$data,
-                  y = COVID19$totale_casi)
+                  y = COVID19$totale_casi,
+									dy = reldiff(COVID19$totale_casi))
 data$x = as.numeric(data$date) - min(as.numeric(data$date)) + 1
 DT::datatable(data, options = list("pageLength" = 5))
 ```
