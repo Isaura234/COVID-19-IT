@@ -314,8 +314,8 @@ ggplot(df, aes(x = date, y = hospital)) +
   geom_line(size = 0.5, col = "orange") +
   labs(x = "", y = "Change hospitalized patients") +
   coord_cartesian(ylim = range(df$hospital, na.rm = TRUE)) +
-  scale_y_continuous(minor_breaks = seq(0, max(df$hospital, na.rm = TRUE), 
-                                        by = 100)) +
+  scale_y_continuous(minor_breaks = seq(min(df$hospital, na.rm = TRUE), 
+                                        max(df$hospital, na.rm = TRUE), by = 100)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   theme_bw() +
@@ -330,8 +330,8 @@ ggplot(df, aes(x = date, y = icu)) +
   geom_line(size = 0.5, col = "red2") +
   labs(x = "", y = "Change ICU patients") +
   coord_cartesian(ylim = range(df$icu, na.rm = TRUE)) +
-  scale_y_continuous(minor_breaks = seq(0, max(df$icu, na.rm = TRUE), 
-                                        by = 10)) +
+  scale_y_continuous(minor_breaks = seq(min(df$icu, na.rm = TRUE),
+										                    max(df$icu, na.rm = TRUE), by = 10)) +
   scale_x_date(date_breaks = "2 day", date_labels =  "%b%d",
                minor_breaks = "1 day") +
   theme_bw() +
