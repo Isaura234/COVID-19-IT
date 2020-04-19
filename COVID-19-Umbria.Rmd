@@ -81,11 +81,11 @@ summary(mod3)
 ```{R}
 richards <- function(x, th1, th2, th3) th1*(1 - exp(-th2*x))^th3
 Loss  <- function(th, y, x) sum((y - richards(x, th[1], th[2], th[3]))^2) 
-start <- optim(par = c(coef(mod2)[1], 0.001, 1), fn = Loss, 
+start <- optim(par = c(coef(mod3)[1], 0.001, 1), fn = Loss, 
                y = data$y, x = data$x)$par
 names(start) <- c("th1", "th2", "th3")
 mod4 = nls(y ~ richards(x, th1, th2, th3), data = data, start = start,
-           # trace = TRUE, # algorithm = "port", 
+           # trace = TRUE, algorithm = "port", 
            control = nls.control(maxiter = 1000))
 summary(mod4)
 ```
