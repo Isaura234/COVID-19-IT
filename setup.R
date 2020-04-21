@@ -8,8 +8,10 @@ opts_chunk$set(fig.align = "center",
                collapse = TRUE, # collapse input & ouput code in chunks
                warning = FALSE, message = FALSE)
 
+library(data.table)
 library(ggplot2)
-
+library(ggrepel)
+library(ggthemes)
 library(gridExtra)
 tab_theme <- ttheme_default(
   core = list(# bg_params = list(fill = NA, col=NA),
