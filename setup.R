@@ -50,6 +50,8 @@ peaks <- function (x, span = 3)
 
 library(numDeriv)
 
+exponential <- function(x, th1, th2) th1 * exp(th2 * x)
+
 exponentialGrad <- function(object, x, ...)
 {
   th <- coef(object)

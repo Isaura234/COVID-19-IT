@@ -97,7 +97,6 @@ DT::datatable(data, options = list("pageLength" = 5))
 mod1_start = lm(log(y) ~ x, data = data)
 b = unname(coef(mod1_start))
 start = list(th1 = exp(b[1]), th2 = b[2])
-exponential <- function(x, th1, th2) th1 * exp(th2 * x)
 mod1 = nls(y ~ exponential(x, th1, th2), data = data, start = start)
 summary(mod1)
 ```
