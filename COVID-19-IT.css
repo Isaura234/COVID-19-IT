@@ -135,7 +135,7 @@ h1 {
 
 h1.title {
   color: rgb(66,66,66);
-  font-size: 220%;
+  font-size: 200%;
   line-height: 40px;
 }
 
@@ -155,8 +155,10 @@ h3 {
 }
 
 h3.subtitle {
-  font-style: normal;
-  color: rgb(46,90,136);
+	font-style: normal;
+  color: rgb(66,66,66);
+  font-size: 150%;
+  line-height: 20px;
 }
 
 h4 {
@@ -166,14 +168,15 @@ h4 {
 }
 
 h4.author { 
+  color: rgb(66,66,66);
+  font-size: 100%;
   border-bottom: 0;
-  color: rgb(46,90,136);
 }
 
 h4.date { 
   border-bottom: 1px solid #f7f7f7;
   font-size: 100%;
-  color: rgb(46,90,136);
+  color: rgb(66,66,66);
 }
 
 h5, h6 {
