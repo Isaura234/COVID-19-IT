@@ -1,0 +1,168 @@
+---
+title: "GAMs for Modelling COVID-19 Hospitalised and ICU Patients"
+params:
+  regione: "regione"
+  date: Sys.Date()
+subtitle: "`r params$regione`"
+date: "`r format(Sys.time(), '%d %b %Y')`"
+output: 
+  rmarkdown::html_vignette:
+    toc: true
+    number_sections: false
+    css: "../COVID-19-IT.css"
+---
+
+
+<br><br>
+
+```{R setup, echo=FALSE, message=FALSE}
+library(knitr)
+opts_chunk$set(fig.align = "center",
+               fig.width = 6, fig.height = 5,
+               dev.args = list(pointsize=12),
+               out.width = "90%", dpi = 300,
+               cache = FALSE,
+               par = TRUE, # needed for setting hook 
+               collapse = TRUE, # collapse input & ouput code in chunks
+               warning = FALSE, message = FALSE)
+
+library(data.table)
+library(ggplot2)
+library(ggrepel)
+library(ggthemes)
+library(gridExtra)
+library(mgcv)
+
+tab_theme <- ttheme_default(
+  core = list(# bg_params = list(fill = NA, col=NA),
+              fg_params=list(fontface=1, fontsize = 10)),
+  colhead = list(fg_params=list(col="black", fontface=2, fontsize = 10)),
+  rowhead = list(fg_params=list(col="black", fontface=2, hjust=0, x=0,
+                                fontsize = 10),
+                 bg_params=list(fill = c("grey95", "grey90"))))
+
+# source("../GompertzGrowth/functions.R")
+day2date <- function(x, origin) as.Date(as.numeric(x), origin = origin)
+col = "forestgreen"
+```
+
+```{R data, fig.width=6, fig.height=5, out.width="90%"}
+url = "https://raw.githubusercontent.com/pcm-dpc/COVID-19/master/dati-regioni/dpc-covid19-ita-regioni.csv"
+COVID19 = data.table::fread(url)
+COVID19$data = as.Date(COVID19$data)
+COVID19 = COVID19[data <= date]                      # subset date
+COVID19 = COVID19[denominazione_regione == regione]  # subset region
+COVID19 = COVID19[totale_casi > 0]
+COVID19[, day := as.numeric(data - min(data) + 1)]
+# remove cases with missing
+# COVID19 = na.omit(COVID19)
+
+ICU = read.csv("ICU_regione.csv", comment.char = "#", stringsAsFactors = FALSE)
+```
+
+```{r, echo=FALSE, eval=FALSE}
+ggplot(COVID19, aes(x = data, y = totale_ospedalizzati)) + geom_point()
+ggplot(COVID19, aes(x = data, y = terapia_intensiva)) + geom_point()
+```
+
+## Hospitalized patients
+
+```{R Hosp_fit}
+mod = gam(totale_ospedalizzati ~ s(day), data = COVID19, family = poisson(link = "log"))
+summary(mod)
+
+plot(mod, shade = TRUE, seWithMean = TRUE, residuals = TRUE, pch = 1, cex = 0.8)
+par(mfrow = c(2,2))
+gam.check(mod)
+```
+
+```{R Hosp_prediction}
+newdata = with(COVID19, data.frame(day = seq(min(day), max(day)+14)))
+lpred = predict(mod, newdata, type = "link", se.fit = TRUE)
+nsim = 10000
+V = vcov(mod)
+U = MASS::mvrnorm(nsim, mu = rep(0, nrow(V)), Sigma = V)
+simDev = predict(mod, newdata, type = "lpmatrix") %*% t(U)
+absDev = abs(sweep(simDev, 1, lpred$se.fit, FUN = "/"))
+crit = quantile(apply(absDev, 2, max), prob = 0.95, type = 8)
+
+pred = data.frame(newdata,
+                  date = day2date(newdata$day, origin = min(COVID19$data)-1),
+                  fit = exp(lpred$fit), 
+                   # pointwise confidence intervals
+                  lwr = exp(lpred$fit - 1.96 * lpred$se.fit), 
+                  upr = exp(lpred$fit + 1.96 * lpred$se.fit),
+                  # simultaneous confidence intervals
+                  slwr = exp(lpred$fit - crit * lpred$se.fit),
+                  supr = exp(lpred$fit + crit * lpred$se.fit))
+
+kable(subset(pred, date > max(COVID19$data)), digits = 2)
+```
+
+```{R Hosp_plot, out.width="100%"}
+ggplot(pred, aes(x = date)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = col, alpha = 0.2) +
+  geom_ribbon(aes(ymin = slwr, ymax = supr), fill = col, alpha = 0.2) +
+  geom_line(aes(y = fit), lwd = 1.5, col = col) +
+  geom_point(data = COVID19, aes(x = data, y = totale_ospedalizzati), pch = 1) +
+  geom_vline(xintercept = max(COVID19$data)+0.5, lty = 2) +
+  scale_x_date(date_breaks = "1 week", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  labs(title = regione, y = "Total hospitalized", x = "") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle=60, hjust=1))
+```
+
+
+## ICU patients
+
+```{R ICU_fit}
+mod = gam(terapia_intensiva ~ s(day), data = COVID19, family = poisson(link = "log"))
+summary(mod)
+
+plot(mod, shade = TRUE, seWithMean = TRUE, residuals = TRUE, pch = 1, cex = 0.8)
+par(mfrow = c(2,2))
+gam.check(mod)
+```
+
+```{R ICU_prediction}
+newdata = with(COVID19, data.frame(day = seq(min(day), max(day)+14)))
+lpred = predict(mod, newdata, type = "link", se.fit = TRUE)
+nsim = 10000
+V = vcov(mod)
+U = MASS::mvrnorm(nsim, mu = rep(0, nrow(V)), Sigma = V)
+simDev = predict(mod, newdata, type = "lpmatrix") %*% t(U)
+absDev = abs(sweep(simDev, 1, lpred$se.fit, FUN = "/"))
+crit = quantile(apply(absDev, 2, max), prob = 0.95, type = 8)
+
+pred = data.frame(newdata,
+                  date = day2date(newdata$day, origin = min(COVID19$data)-1),
+                  fit = exp(lpred$fit), 
+                   # pointwise confidence intervals
+                  lwr = exp(lpred$fit - 1.96 * lpred$se.fit), 
+                  upr = exp(lpred$fit + 1.96 * lpred$se.fit),
+                  # simultaneous confidence intervals
+                  slwr = exp(lpred$fit - crit * lpred$se.fit),
+                  supr = exp(lpred$fit + crit * lpred$se.fit))
+
+kable(subset(pred, date > max(COVID19$data)), digits = 2)
+```
+
+```{R ICU_plot, fig.width=6, fig.height=5, out.width="100%"}
+Posti_ICU = subset(ICU, Regione == regione)$Posti_ICU
+
+ggplot(pred, aes(x = date)) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), fill = col, alpha = 0.2) +
+  geom_ribbon(aes(ymin = slwr, ymax = supr), fill = col, alpha = 0.2) +
+  geom_line(aes(y = fit), lwd = 1.5, col = col) +
+  geom_point(data = COVID19, aes(x = data, y = terapia_intensiva), pch = 1) +
+  geom_vline(xintercept = max(COVID19$data)+0.5, lty = 2) +
+  geom_hline(yintercept = Posti_ICU) +
+  scale_x_date(date_breaks = "1 week", date_labels =  "%b%d",
+               minor_breaks = "1 day") +
+  coord_cartesian(ylim = c(0, min(max(pred[,3:7]), Posti_ICU))) +
+  labs(title = regione, y = "Total ICU", x = "") +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle=60, hjust=1))
+```
+
