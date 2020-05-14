@@ -63,12 +63,15 @@ summary(mod2)
 ### Gompertz
 
 ```{R}
-start = list(Asym = coef(mod2)[1])
-tmp = list(y = log(log(start$Asym) - log(data$y)), x = data$x)
-b = unname(coef(lm(y ~ x, data = tmp)))
-start = c(start, c(b2 = exp(b[1]), b3 = exp(b[2])))
-mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data, start = start, 
+mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data,
            control = nls.control(maxiter = 10000))
+# start = list(Asym = coef(mod2)[1])
+# start = list(Asym = max(data$y)*100)
+# tmp = data.frame(y = log(log(start$Asym) - log(data$y)), x = data$x)
+# b = unname(coef(lm(y ~ x, data = tmp[is.finite(tmp$y),])))
+# start = c(start, c(b2 = exp(b[1]), b3 = exp(b[2])))
+# mod3 = nls(y ~ SSgompertz(x, Asym, b2, b3), data = data, start = start, 
+#            control = nls.control(maxiter = 10000))
 summary(mod3)
 ```
 
@@ -77,7 +80,7 @@ summary(mod3)
 ```{R}
 richards <- function(x, th1, th2, th3) th1*(1 - exp(-th2*x))^th3
 Loss  <- function(th, y, x) sum((y - richards(x, th[1], th[2], th[3]))^2) 
-start <- optim(par = c(coef(mod2)[1], 0.001, 1), fn = Loss, 
+start <- optim(par = c(coef(mod3)[1], 0.001, 1), fn = Loss, 
                y = data$y, x = data$x)$par
 names(start) <- c("th1", "th2", "th3")
 mod4 = nls(y ~ richards(x, th1, th2, th3), data = data, start = start,
